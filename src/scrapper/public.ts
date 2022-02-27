@@ -14,6 +14,7 @@ export class PublicScheduleScrapper extends ScrapperBase {
       await datePicker?.type(this.options.setDate.toFormat(DateFormats.dateYMD))
       await datePicker?.press('Enter')
       await this.activePage?.waitForTimeout(2000)
+      this.logger?.debug('Date set to %s!', this.options.setDate.toISO())
     }
   }
 
@@ -23,6 +24,7 @@ export class PublicScheduleScrapper extends ScrapperBase {
     )
     await this.updateDate()
     const entriesAll = (await this.activePage?.$$('tbody td[id*=";"]')) ?? []
+    this.logger?.debug('Aquired %s candidates', entriesAll.length)
     const entries: HandledElement[] = []
 
     // Filter non-reservation items
@@ -34,6 +36,8 @@ export class PublicScheduleScrapper extends ScrapperBase {
       if (blockColor !== 'rgb(124, 132, 132)') entries.push(he)
       else this.logger?.info('Removed reservation')
     }
+
+    this.logger?.debug('Reduced to %s candidates', entries.length)
 
     return entries ?? []
   }

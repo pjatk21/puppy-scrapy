@@ -7,9 +7,14 @@ export class Uploader {
   private readonly got: Got
   log?: Logger
 
-  constructor(baseApi: string | URL) {
+  constructor(baseApi: string | URL, uploadKey: string) {
     this.base = typeof baseApi === 'string' ? new URL(baseApi) : baseApi
-    this.got = got.extend({ prefixUrl: this.base })
+    this.got = got.extend({
+      prefixUrl: this.base,
+      headers: {
+        'X-Upload-key': uploadKey,
+      },
+    })
   }
 
   async uploadEntries(entries: ScheduleEntry[], forDate: string) {
