@@ -17,8 +17,8 @@ yargs(hideBin(process.argv))
   })
   .option('uploadKey', {
     description:
-      'Key required to upload to an API, can be set by env ALTAPI_UPLOADKEY',
-    default: process.env.ALTAPI_UPLOADKEY,
+      'Key required to upload to an API, can be set by env ALTAPI_UPLOAD_KEY',
+    default: process.env.ALTAPI_UPLOAD_KEY,
   })
   .command(
     'loop',
