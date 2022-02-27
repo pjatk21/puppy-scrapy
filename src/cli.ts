@@ -10,11 +10,15 @@ import { Uploader } from './uploader'
 import 'dotenv/config'
 
 yargs(hideBin(process.argv))
+  .option('api', {
+    'description': 'URL for API, can be set by env var ALTAPI_URL.',
+    default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev',
+  })
   .command(
     'run',
     'Just for dev purposes',
     (yargs) => yargs.option('limit', { type: 'number' }),
-    async ({ limit }) => {
+    async ({ limit, api }) => {
       const pss = new PublicScheduleScrapper(
         await getBrowser(),
         {
@@ -26,7 +30,7 @@ yargs(hideBin(process.argv))
       const d = (await pss.getData()) as ScheduleEntry[]
       console.log(JSON.stringify(d, undefined, 2))
       try {
-        await new Uploader('http://localhost/who/cares').uploadEntries(
+        await new Uploader(api).uploadEntries(
           d,
           '2022-03-07'
         )
