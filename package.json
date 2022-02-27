@@ -4,7 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "type": "module",
+  "module": "dist/index.js",
+  "exports": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "dependencies": {
+    "dotenv": "^16.0.0",
     "got": "^12.0.1",
     "luxon": "^2.3.1",
     "pino": "^7.8.0",
@@ -27,7 +34,9 @@
   "scripts": {
     "build": "yarn lint && rimraf dist && tsc",
     "lint": "eslint --ext .{ts,js} src --fix --no-error-on-unmatched-pattern",
-    "cli": "node --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts"
+    "cli": "node --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",
+    "postinstall": "yarn build",
+    "prepublishOnly": "yarn build"
   },
   "bin": {
     "alt-scrap": "./dist/cli.js"

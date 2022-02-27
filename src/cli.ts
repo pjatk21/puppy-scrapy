@@ -7,6 +7,7 @@ import { getBrowser } from '.'
 import { PublicScheduleScrapper } from './scrapper/public'
 import { DateFormats, ScheduleEntry } from './types'
 import { Uploader } from './uploader'
+import 'dotenv/config'
 
 yargs(hideBin(process.argv))
   .command(
