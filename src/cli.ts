@@ -13,7 +13,7 @@ import { writeFileSync } from 'fs'
 yargs(hideBin(process.argv))
   .option('api', {
     description: 'URL for API, can be set by env ALTAPI_URL.',
-    default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev',
+    default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev/v1',
   })
   .option('uploadKey', {
     description:

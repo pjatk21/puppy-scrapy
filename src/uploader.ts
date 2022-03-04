@@ -20,7 +20,7 @@ export class Uploader {
   async uploadEntries(entries: ScheduleEntry[], forDate: string) {
     this.log?.debug('Uploading ' + entries.length + ' entries')
     const response = await this.got
-      .post('public/timetable/upload/' + forDate, { json: entries })
+      .post('timetable/upload/' + forDate, { json: entries })
       .json()
     this.log?.info(response)
     return response
