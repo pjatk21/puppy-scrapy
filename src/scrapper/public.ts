@@ -8,6 +8,16 @@ export class PublicScheduleScrapper extends ScrapperBase {
 
   private async updateDate() {
     if (this.options.setDate) {
+      // DO NOT UPDATE DATE IF IT'S THE SAME AS ACTUAL DATE!
+      if (
+        this.options.setDate.toFormat(DateFormats.dateYMD) === DateTime.local().toFormat(DateFormats.dateYMD)
+      ) {
+        this.logger?.warn(
+          "Can't update if taget date is equal to today's date!"
+        )
+        return
+      }
+
       const datePicker = await this.activePage?.$('#DataPicker_dateInput')
       await datePicker?.click()
       await datePicker?.press('Backspace')
