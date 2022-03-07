@@ -9,6 +9,8 @@ RUN adduser -D -s /bin/bash scrapper
 
 WORKDIR /app
 
+RUN chown -R scrapper /app
+
 USER scrapper
 
 COPY --chown=scrapper package.json /app/package.json
