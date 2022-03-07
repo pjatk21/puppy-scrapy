@@ -9,13 +9,15 @@ RUN adduser -D -s /bin/bash scrapper
 
 WORKDIR /app
 
-COPY . /app
-
-RUN chown -R scrapper /app
-
 USER scrapper
 
+COPY --chown=scrapper package.json /app/package.json
+
+COPY --chown=scrapper yarn.lock /app/yarn.lock
+
 RUN yarn install
+
+COPY --chown=scrapper . /app
 
 RUN yarn build
 
