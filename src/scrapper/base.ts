@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
 import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer'
-import { EventEmitter } from 'stream'
+import { EventEmitter } from 'events'
 
 export type HandledElement = ElementHandle<Element>
 
@@ -85,7 +85,7 @@ export abstract class ScrapperBase {
   /**
    * Higher level function, the entrypoint for user
    */
-  async getData() {
+  public async getData(): Promise<unknown> {
     await this.begin()
     let results
     if (this.prepare) results = await this.reduce(await this.prepare())
@@ -97,7 +97,7 @@ export abstract class ScrapperBase {
   /**
    * Set listener for events
    */
-  async on(
+  public async on(
     event: ScrapperEvent,
     callback: (htmlId: string, context: { body?: string; error?: Error }) => void
   ) {
@@ -107,10 +107,10 @@ export abstract class ScrapperBase {
   /**
    * Set listener for events
    */
-  async emit(
+  protected async emit(
     event: ScrapperEvent,
     htmlId: string, context: { body?: string; error?: Error }
   ) {
-    this.events.emit(event, htmlId, event)
+    this.events.emit(event, htmlId, context)
   }
 }
