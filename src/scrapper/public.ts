@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { HandledElement } from '..'
 import { DateFormats, ScheduleEntry } from '../types'
-import { ScrapperBase } from './base'
+import { ScrapperBase, ScrapperEvent } from './base'
 
 export class PublicScheduleScrapper extends ScrapperBase {
   public isPrivateEndpoint = false
@@ -10,7 +10,8 @@ export class PublicScheduleScrapper extends ScrapperBase {
     if (this.options.setDate) {
       // DO NOT UPDATE DATE IF IT'S THE SAME AS ACTUAL DATE!
       if (
-        this.options.setDate.toFormat(DateFormats.dateYMD) === DateTime.local().toFormat(DateFormats.dateYMD)
+        this.options.setDate.toFormat(DateFormats.dateYMD) ===
+        DateTime.local().toFormat(DateFormats.dateYMD)
       ) {
         this.logger?.warn(
           "Can't update if taget date is equal to today's date!"
@@ -52,6 +53,11 @@ export class PublicScheduleScrapper extends ScrapperBase {
     return entries ?? []
   }
 
+  /**
+   * @deprecated
+   * @param rawContent string of stripped html tooltip
+   * @returns lines of entries
+   */
   private parseTooltipContent(rawContent: string) {
     return rawContent
       .replace(/(^\s+$| {2,})/gm, '')
@@ -60,6 +66,11 @@ export class PublicScheduleScrapper extends ScrapperBase {
       .split('\n')
   }
 
+  /**
+   * @deprecated
+   * @param lines lines of entries
+   * @returns serialized objects
+   */
   private parsedLinesIntoObject(lines: string[]): ScheduleEntry {
     const nameMapping = new Map()
       .set('Data zajęć:', 'stringDate')
@@ -118,25 +129,43 @@ export class PublicScheduleScrapper extends ScrapperBase {
     }
   }
 
-  protected async scrap(elements?: HandledElement[]): Promise<ScheduleEntry[]> {
+  protected async scrap(elements?: HandledElement[]): Promise<string[]> {
     const beginTime = DateTime.local()
     let count = 0
     const entries = []
     for (const he of elements ?? []) {
+      // Save htmlId to identify entry
+      const htmlId: string = await he
+        .getProperty('id')
+        .then((props) => props.jsonValue())
+
+      // Hover mouse over box
       await he.click()
-      await this.activePage?.waitForSelector('#RadToolTipManager1RTMPanel', {
-        visible: true,
-        timeout: this.options.timeout ?? 5000,
-      })
+
+      // Wait for tooltip appear
+      try {
+        await this.activePage?.waitForSelector('#RadToolTipManager1RTMPanel', {
+          visible: true,
+          timeout: this.options.timeout ?? 5000,
+        })
+      } catch (error) {
+        this.logger?.error(error)
+        this.emit(ScrapperEvent.ERROR, htmlId, { error: error as Error })
+        continue
+      }
+
+      // Read content of tooltip
       const tooltipContent = await this.activePage?.$eval(
         '#RadToolTipManager1RTMPanel',
-        (elem) => elem.textContent
-      )
-      entries.push(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.parsedLinesIntoObject(this.parseTooltipContent(tooltipContent!))
+        (elem) => elem.innerHTML
       )
 
+      // Save data
+      this.emit(ScrapperEvent.FETCH, htmlId, { body: tooltipContent })
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      entries.push(tooltipContent!)
+
+      // Log remaining time
       const avgTime = DateTime.local().diff(beginTime).toMillis() / ++count
       const timeLeft = avgTime * (elements?.length ?? 0 - count)
       this.logger?.debug(
@@ -148,12 +177,14 @@ export class PublicScheduleScrapper extends ScrapperBase {
         })
       )
     }
+
     this.logger?.debug(
       'Fetched',
       elements?.length,
       'in',
       DateTime.local().diff(beginTime).toHuman()
     )
+
     return entries
   }
 }
