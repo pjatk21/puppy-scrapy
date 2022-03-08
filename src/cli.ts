@@ -9,6 +9,7 @@ import { DateFormats, ScheduleEntry } from './types'
 import { Uploader } from './uploader'
 import 'dotenv/config'
 import { writeFileSync } from 'fs'
+import { ScrapperEvent } from './scrapper/base'
 
 yargs(hideBin(process.argv))
   .option('api', {
@@ -69,35 +70,24 @@ yargs(hideBin(process.argv))
             },
             loopLogger
           )
-          const entries = (await activeScrapper.getData()) as ScheduleEntry[]
-          loopLogger.info('Scrapped %d entries for day %s', entries.length, date.toISODate())
+
+          activeScrapper.on(ScrapperEvent.FETCH, (htmlId, context) =>
+            console.log(htmlId, context)
+          )
+
+          const entries = await activeScrapper.getData()
+          loopLogger.info(
+            'Scrapped %d entries for day %s',
+            entries.length,
+            date.toISODate()
+          )
 
           if (saveToJSON)
             writeFileSync(
               `uploadPayload-${date}.json`,
               JSON.stringify(entries, undefined, 2)
             )
-
-          if (!skipUpload) {
-            try {
-              if (uploadKey)
-                await new Uploader(api, uploadKey).uploadEntries(
-                  entries,
-                  date.toFormat(DateFormats.dateYMD)
-                )
-              else throw new Error('No upload key present!')
-            } catch (e) {
-              loopLogger.error(e)
-            }
-          } else {
-            loopLogger.info('Upload skipped!')
-          }
-
-          loopLogger.info('%ss delay', loopDelay)
-          await new Promise((resolve) => setTimeout(resolve, loopDelay * 1000))
         }
-        loopLogger.info('%ss interval pause', loopInterval)
-        await new Promise((resolve) => setTimeout(resolve, loopInterval * 1000))
       } while (!once)
 
       process.exit()
