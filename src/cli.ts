@@ -66,6 +66,7 @@ yargs(hideBin(process.argv))
             {
               setDate: date,
               timeout: 25_000,
+              limit,
             },
             loopLogger
           )
