@@ -187,4 +187,9 @@ export class PublicScheduleScrapper extends ScrapperBase {
 
     return entries
   }
+
+  // type shit
+  public async getData(): Promise<string[]> {
+    return super.getData() as Promise<string[]>
+  }
 }
