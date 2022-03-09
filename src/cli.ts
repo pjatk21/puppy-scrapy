@@ -93,6 +93,15 @@ yargs(hideBin(process.argv))
       process.exit()
     }
   )
+  .command(
+    'worker',
+    'Run scrapper in worker mode (managed by hypervisor)',
+    (yargs) => yargs.option('limit', { type: 'number' }),
+    async ({ limit }) => {
+      const browser = await getBrowser()
+      const workerLogger = pino()
+    }
+  )
   .showHelpOnFail(true)
   .demandCommand()
   .strictCommands()
