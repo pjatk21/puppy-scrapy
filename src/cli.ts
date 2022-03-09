@@ -5,11 +5,11 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { getBrowser } from '.'
 import { PublicScheduleScrapper } from './scrapper/public'
-import { DateFormats, ScheduleEntry } from './types'
-import { Uploader } from './uploader'
+import { DateFormats } from './types'
 import 'dotenv/config'
 import { writeFileSync } from 'fs'
 import { ScrapperEvent } from './scrapper/base'
+import { WorkerManager } from './manager'
 
 yargs(hideBin(process.argv))
   .option('api', {
@@ -100,6 +100,10 @@ yargs(hideBin(process.argv))
     async ({ limit }) => {
       const browser = await getBrowser()
       const workerLogger = pino()
+      const manager = new WorkerManager(browser, workerLogger, {
+        gateway: 'ws://localhost:4000',
+      })
+      manager.start()
     }
   )
   .showHelpOnFail(true)
