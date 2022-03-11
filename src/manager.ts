@@ -1,11 +1,12 @@
 import { Logger } from 'pino'
 import { Browser } from 'puppeteer'
 import { io } from 'socket.io-client'
-import { ScrapperEvent } from './scrapper/base'
+import { ScrapperEvent, ScrapperOptions } from './scrapper/base'
 import { PublicScheduleScrapper } from './scrapper/public'
 
 export type ManagerConfig = {
   gateway: string
+  scrapperOptions?: ScrapperOptions
 }
 
 export class WorkerManager {
@@ -22,7 +23,11 @@ export class WorkerManager {
       autoConnect: false,
       transports: ['websocket', 'polling'],
     })
-    this.scrapper = new PublicScheduleScrapper(browser, undefined, logger)
+    this.scrapper = new PublicScheduleScrapper(
+      browser,
+      configuration.scrapperOptions,
+      logger
+    )
     this.scrapper.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
       this.transporter(htmlId, context)
     )
@@ -42,7 +47,7 @@ export class WorkerManager {
       })
     }
     // this.logger.info({htmlId, body})
-    if (body) this.socket.emit('upload', { htmlId, body })
+    if (body) this.socket.emit('schedule-update', { htmlId, body })
   }
 
   private handleCommand(ev: unknown) {

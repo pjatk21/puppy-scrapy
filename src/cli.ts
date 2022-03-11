@@ -101,7 +101,8 @@ yargs(hideBin(process.argv))
       const browser = await getBrowser()
       const workerLogger = pino()
       const manager = new WorkerManager(browser, workerLogger, {
-        gateway: 'ws://localhost:4000',
+        gateway: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
+        scrapperOptions: { limit },
       })
       manager.start()
     }
