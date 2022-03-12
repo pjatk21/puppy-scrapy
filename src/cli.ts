@@ -7,90 +7,52 @@ import { getBrowser } from '.'
 import { PublicScheduleScrapper } from './scrapper/public'
 import { DateFormats } from './types'
 import 'dotenv/config'
-import { writeFileSync } from 'fs'
+import { existsSync, writeFileSync } from 'fs'
 import { ScrapperEvent } from './scrapper/base'
 import { WorkerManager } from './manager'
+import { Manager } from 'socket.io-client'
+import { Keychain } from './keychain'
+
+const cliLogger =
+  process.env.NODE_ENV === 'production'
+    ? pino()
+    : pino({
+        transport: {
+          target: 'pino-pretty',
+          options: { translateTime: true },
+        },
+      })
 
 yargs(hideBin(process.argv))
   .option('api', {
     description: 'URL for API, can be set by env ALTAPI_URL.',
     default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev/v1',
   })
-  .option('uploadKey', {
-    description:
-      'Key required to upload to an API, can be set by env ALTAPI_UPLOAD_KEY',
-    default: process.env.ALTAPI_UPLOAD_KEY,
-  })
   .command(
-    'loop',
-    'Main loop for scrapper.',
+    'init',
+    'Create required files before first run',
     (yargs) =>
       yargs
-        .option('limit', { type: 'number' })
-        .option('date', {
-          type: 'string',
-          default: DateTime.local().toFormat(DateFormats.dateYMD),
+        .option('ignore', {
+          description: 'Ignore if everything is as it should be.',
+          type: 'boolean',
         })
-        .option('saveToJSON', { type: 'boolean', default: false })
-        .option('loopSize', { type: 'number', default: 21 })
-        .option('loopInterval', { type: 'number', default: 3600 })
-        .option('loopDelay', { type: 'number', default: 10 })
-        .option('once', { type: 'boolean', default: false })
-        .option('skipUpload', { type: 'boolean', default: false }),
-    async ({
-      limit,
-      api,
-      uploadKey,
-      date,
-      saveToJSON,
-      once,
-      loopSize,
-      skipUpload,
-      loopDelay,
-      loopInterval,
-    }) => {
-      const browser = await getBrowser()
-      const loopLogger = pino()
+        .option('force', { description: 'Always overwrite.', type: 'boolean' })
+        .option('name', { description: 'Name of scrapper.', type: 'string' }),
+    ({ ignore, force, name }) => {
+      if (ignore && force) throw new Error("You can't pass both flags!")
 
-      do {
-        const dates = Array.from(Array(loopSize).keys()).map((n) => {
-          return DateTime.fromFormat(date, DateFormats.dateYMD).plus({
-            days: n,
-          })
-        })
-        loopLogger.info(dates.map((d) => d.toISODate()))
-
-        for (const date of dates) {
-          loopLogger.info('Start scrapping %s', date.toISODate())
-          const activeScrapper = new PublicScheduleScrapper(
-            browser,
-            {
-              setDate: date,
-              timeout: 25_000,
-            },
-            loopLogger
-          )
-
-          activeScrapper.on(ScrapperEvent.FETCH, (htmlId, context) =>
-            console.log(htmlId, context)
-          )
-
-          const entries = await activeScrapper.getData()
-          loopLogger.info(
-            'Scrapped %d entries for day %s',
-            entries.length,
-            date.toISODate()
-          )
-
-          if (saveToJSON)
-            writeFileSync(
-              `uploadPayload-${date}.json`,
-              JSON.stringify(entries, undefined, 2)
-            )
+      if (existsSync('identity.json')) {
+        if (ignore) console.debug('Identity already exitst! Ignoring...')
+        else if (force) {
+          console.debug('Overwritting identity...')
+          Keychain.generate(name)
+        } else {
+          throw new Error('Identity exits! Pass --ignore or --force')
         }
-      } while (!once)
-
-      process.exit()
+      } else {
+        Keychain.generate(name)
+      }
     }
   )
   .command(
@@ -99,8 +61,7 @@ yargs(hideBin(process.argv))
     (yargs) => yargs.option('limit', { type: 'number' }),
     async ({ limit }) => {
       const browser = await getBrowser()
-      const workerLogger = pino()
-      const manager = new WorkerManager(browser, workerLogger, {
+      const manager = new WorkerManager(browser, cliLogger, {
         gateway: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
         scrapperOptions: { limit },
       })
