@@ -54,6 +54,14 @@ export class Keychain {
       configName: 'identity',
       cwd: '.',
     })
+    if (
+      !(
+        this.config.get('uuid') ||
+        this.config.get('name') ||
+        this.config.get('secret')
+      )
+    )
+      throw new Error('Missing identity file')
   }
 
   read() {
