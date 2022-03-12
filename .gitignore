@@ -131,3 +131,4 @@ dist
 
 # Project related ignores
 upload*.json
+identity.json
