@@ -109,7 +109,8 @@ export abstract class ScrapperBase {
    */
   protected async emit(
     event: ScrapperEvent,
-    htmlId: string, context: { body?: string; error?: Error }
+    htmlId: string,
+    context: { body?: string; error?: Error }
   ) {
     this.events.emit(event, htmlId, context)
   }

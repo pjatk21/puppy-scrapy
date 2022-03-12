@@ -67,7 +67,7 @@ export class PublicScheduleScrapper extends ScrapperBase {
   }
 
   /**
-   * @deprecated
+   * @deprecated this feature won't be working with altapi >= 1.0.0
    * @param lines lines of entries
    * @returns serialized objects
    */
