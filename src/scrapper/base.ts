@@ -25,7 +25,7 @@ export async function getBrowser() {
         args: ['--no-sandbox'],
       })
     default:
-      return await puppeteer.launch({ headless: false })
+      return await puppeteer.launch({ headless: true })
   }
 }
 

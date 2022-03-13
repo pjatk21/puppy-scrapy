@@ -1,10 +1,16 @@
+import { DateTime } from 'luxon'
 import { Logger } from 'pino'
 import { Browser } from 'puppeteer'
 import { io } from 'socket.io-client'
-import { HypervisorEvents, HypervisorScrapperCommands, HypervisorScrapperState as HSState } from './altapi/hypevisor-enums'
+import {
+  HypervisorEvents,
+  HypervisorScrapperCommands,
+  HypervisorScrapperState as HSState,
+} from './altapi/hypevisor-enums'
 import { Keychain } from './keychain'
 import { ScrapperEvent, ScrapperOptions } from './scrapper/base'
 import { PublicScheduleScrapper } from './scrapper/public'
+import { HypervisorScrapArgs } from './altapi/hypervisor-types'
 
 export type ManagerConfig = {
   gateway: string
@@ -52,11 +58,6 @@ export class WorkerManager {
     const { body, error } = context
     if (error) {
       this.logger.error(error)
-      this.socket.emit('incident', {
-        htmlId,
-        title: error.name,
-        description: error.message,
-      })
     }
     // this.logger.info({htmlId, body})
     if (body) this.socket.emit(HypervisorEvents.SCHEDULE, { htmlId, body })
@@ -64,7 +65,7 @@ export class WorkerManager {
 
   /**
    * Reports state to the hypervisor
-   * @param state 
+   * @param state
    */
   private updateState(state: HSState) {
     this.socket.emit(HypervisorEvents.STATE, state)
@@ -75,20 +76,42 @@ export class WorkerManager {
    * Command dispatcher
    * @param ev command issued by hypervisor
    */
-  private handleCommand(ev: HypervisorScrapperCommands) {
-    this.logger.info('Received command %s')
+  private handleCommand(ev: HypervisorScrapperCommands, arg: unknown) {
+    this.logger.info({ ev, arg })
     this.updateState(HSState.WORKING)
+
+    if (this.pendingPromise !== null) {
+      this.logger.warn("Can't run command, promise pending!")
+      return
+    }
 
     switch (ev) {
       case HypervisorScrapperCommands.SCRAP:
-        this.pendingPromise = this.scrapper
-          .getData()
+        this.pendingPromise = this.manageScrap(arg as HypervisorScrapArgs)
           .then(() => (this.pendingPromise = null))
           .then(() => this.updateState(HSState.READY))
         break
       case HypervisorScrapperCommands.DISCONNECT:
         this.socket.disconnect()
         break
+    }
+  }
+
+  private async manageScrap(scrapArgs: HypervisorScrapArgs) {
+    const scrapUntil = DateTime.fromISO(scrapArgs.scrapUntil).setZone()
+
+    this.logger.info('Scrapping until %s...', scrapArgs.scrapUntil)
+    let activeDate = DateTime.now()
+
+    while (activeDate < scrapUntil) {
+      this.scrapper.overwriteConfig({
+        setDate: activeDate,
+        limit: scrapArgs.limit,
+        skip: scrapArgs.skip,
+      })
+      await this.scrapper.getData()
+
+      activeDate = activeDate.plus({ day: 1 })
     }
   }
 
@@ -106,8 +129,11 @@ export class WorkerManager {
 
     this.socket.once(HypervisorEvents.VISA, () => {
       this.logger.info('Visa received!')
-      this.socket.on(HypervisorEvents.COMMAND, (ev) => this.handleCommand(ev))
-      this.handleCommand(HypervisorScrapperCommands.SCRAP)
+      this.socket.on(HypervisorEvents.COMMAND, (ev, arg) =>
+        this.handleCommand(ev, arg)
+      )
+      this.updateState(HSState.READY)
+      // this.handleCommand(HypervisorScrapperCommands.SCRAP, {})
     })
   }
 

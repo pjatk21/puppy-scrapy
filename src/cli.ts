@@ -59,12 +59,10 @@ yargs(hideBin(process.argv))
   .command(
     'worker',
     'Run scrapper in worker mode (managed by hypervisor)',
-    (yargs) => yargs.option('limit', { type: 'number' }),
-    async ({ limit }) => {
+    async () => {
       const browser = await getBrowser()
       const manager = new WorkerManager(browser, cliLogger, {
         gateway: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
-        scrapperOptions: { limit },
       })
       manager.start()
     }
