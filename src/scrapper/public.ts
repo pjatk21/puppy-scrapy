@@ -24,7 +24,7 @@ export class PublicScheduleScrapper extends ScrapperBase {
       await datePicker?.press('Backspace')
       await datePicker?.type(this.options.setDate.toFormat(DateFormats.dateYMD))
       await datePicker?.press('Enter')
-      await this.activePage?.waitForTimeout(2000)
+      await this.activePage?.waitForTimeout(2000) // This will cause shit load of problems one day
       this.logger?.debug('Date set to %s!', this.options.setDate.toISO())
     }
   }
@@ -97,11 +97,11 @@ export class PublicScheduleScrapper extends ScrapperBase {
 
       // Log remaining time
       const avgTime = DateTime.local().diff(beginTime).toMillis() / ++count
-      const timeLeft = avgTime * (elements?.length ?? 0 - count)
+      const timeLeft = avgTime * ((elements?.length ?? 0) - count)
       this.logger?.debug(
-        'Avg. scrap time: %sms, expected finish in %s at %s',
+        'Avg. scrap time: %sms, expected finish in %ss at %s',
         avgTime.toFixed(2),
-        timeLeft.toFixed(2),
+        Math.ceil(timeLeft / 1000),
         DateTime.local().plus({
           milliseconds: timeLeft,
         })
@@ -109,10 +109,9 @@ export class PublicScheduleScrapper extends ScrapperBase {
     }
 
     this.logger?.debug(
-      'Fetched',
+      'Fetched %s in %ss',
       elements?.length,
-      'in',
-      DateTime.local().diff(beginTime).toHuman()
+      (DateTime.local().diff(beginTime).toMillis() / 1000).toFixed(2)
     )
 
     return entries
