@@ -10,7 +10,7 @@ import { Keychain } from './keychain'
 
 const cliLogger =
   process.env.NODE_ENV === 'production'
-    ? pino()
+    ? pino({ level: process.env.PINO_LEVEL ?? 'info' })
     : pino({
         transport: {
           target: 'pino-pretty',
