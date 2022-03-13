@@ -1,4 +1,4 @@
-import Conf, { Schema, Options } from 'conf'
+import Conf from 'conf'
 import { createHash, randomBytes, randomUUID } from 'crypto'
 import { hostname } from 'os'
 
