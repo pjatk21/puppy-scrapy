@@ -1,107 +1,65 @@
 #!/usr/bin/env node --experimental-specifier-resolution=node
-import { DateTime } from 'luxon'
 import pino from 'pino'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { getBrowser } from '.'
-import { PublicScheduleScrapper } from './scrapper/public'
-import { DateFormats, ScheduleEntry } from './types'
-import { Uploader } from './uploader'
 import 'dotenv/config'
-import { writeFileSync } from 'fs'
+import { existsSync } from 'fs'
+import { WorkerManager } from './manager'
+import { Keychain } from './keychain'
+
+const cliLogger =
+  process.env.NODE_ENV === 'production'
+    ? pino({ level: process.env.PINO_LEVEL ?? 'info' })
+    : pino({
+        transport: {
+          target: 'pino-pretty',
+          options: { translateTime: true },
+        },
+        level: 'debug',
+      })
 
 yargs(hideBin(process.argv))
   .option('api', {
     description: 'URL for API, can be set by env ALTAPI_URL.',
     default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev/v1',
   })
-  .option('uploadKey', {
-    description:
-      'Key required to upload to an API, can be set by env ALTAPI_UPLOAD_KEY',
-    default: process.env.ALTAPI_UPLOAD_KEY,
-  })
   .command(
-    'loop',
-    'Main loop for scrapper.',
+    'init',
+    'Create required files before first run',
     (yargs) =>
       yargs
-        .option('limit', { type: 'number' })
-        .option('date', {
-          type: 'string',
-          default: DateTime.local().toFormat(DateFormats.dateYMD),
+        .option('ignore', {
+          description: 'Ignore if everything is as it should be.',
+          type: 'boolean',
         })
-        .option('saveToJSON', { type: 'boolean', default: false })
-        .option('loopSize', { type: 'number', default: 21 })
-        .option('loopInterval', { type: 'number', default: 3600 })
-        .option('loopDelay', { type: 'number', default: 10 })
-        .option('once', { type: 'boolean', default: false })
-        .option('skipUpload', { type: 'boolean', default: false }),
-    async ({
-      limit,
-      api,
-      uploadKey,
-      date,
-      saveToJSON,
-      once,
-      loopSize,
-      skipUpload,
-      loopDelay,
-      loopInterval,
-    }) => {
-      const browser = await getBrowser()
-      const loopLogger = pino()
+        .option('force', { description: 'Always overwrite.', type: 'boolean' })
+        .option('name', { description: 'Name of scrapper.', type: 'string' }),
+    ({ ignore, force, name }) => {
+      if (ignore && force) throw new Error("You can't pass both flags!")
 
-      do {
-        const dates = Array.from(Array(loopSize).keys()).map((n) => {
-          return DateTime.fromFormat(date, DateFormats.dateYMD).plus({
-            days: n,
-          })
-        })
-        loopLogger.info(dates.map((d) => d.toISODate()))
-
-        for (const date of dates) {
-          loopLogger.info('Start scrapping %s', date.toISODate())
-          const activeScrapper = new PublicScheduleScrapper(
-            browser,
-            {
-              setDate: date,
-              timeout: 25_000,
-              limit,
-            },
-            loopLogger
-          )
-          const entries = (await activeScrapper.getData()) as ScheduleEntry[]
-          loopLogger.info('Scrapped %d entries for day %s', entries.length, date.toISODate())
-
-          if (saveToJSON)
-            writeFileSync(
-              `uploadPayload-${date}.json`,
-              JSON.stringify(entries, undefined, 2)
-            )
-
-          if (!skipUpload) {
-            try {
-              if (uploadKey)
-                await new Uploader(api, uploadKey).uploadEntries(
-                  entries,
-                  date.toFormat(DateFormats.dateYMD)
-                )
-              else throw new Error('No upload key present!')
-            } catch (e) {
-              loopLogger.error(e)
-            }
-          } else {
-            loopLogger.info('Upload skipped!')
-          }
-
-          loopLogger.info('%ss delay', loopDelay)
-          await new Promise((resolve) => setTimeout(resolve, loopDelay * 1000))
+      if (existsSync('identity.json')) {
+        if (ignore) console.debug('Identity already exitst! Ignoring...')
+        else if (force) {
+          console.debug('Overwritting identity...')
+          Keychain.generate(name)
+        } else {
+          throw new Error('Identity exits! Pass --ignore or --force')
         }
-        loopLogger.info('%ss interval pause', loopInterval)
-        await new Promise((resolve) => setTimeout(resolve, loopInterval * 1000))
-      } while (!once)
-
-      process.exit()
+      } else {
+        Keychain.generate(name)
+      }
+    }
+  )
+  .command(
+    'worker',
+    'Run scrapper in worker mode (managed by hypervisor)',
+    async () => {
+      const browser = await getBrowser()
+      const manager = new WorkerManager(browser, cliLogger, {
+        gateway: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
+      })
+      manager.start()
     }
   )
   .showHelpOnFail(true)

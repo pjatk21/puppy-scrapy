@@ -10,11 +10,13 @@
     "dist/"
   ],
   "dependencies": {
+    "conf": "^10.1.1",
     "dotenv": "^16.0.0",
     "got": "^12.0.1",
     "luxon": "^2.3.1",
     "pino": "^7.8.0",
     "puppeteer": "^13.4.0",
+    "socket.io-client": "^4.4.1",
     "yargs": "^17.3.1"
   },
   "devDependencies": {
@@ -26,12 +28,13 @@
     "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.4.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "pino-pretty": "^7.5.1",
+    "pino-pretty": "^7.5.3",
     "prettier": "^2.5.1",
     "ts-node": "^10.5.0",
     "typescript": "^4.5.5"
   },
   "scripts": {
+    "start": "yarn cli init --ignore && yarn cli worker",
     "build": "yarn lint && rimraf dist && tsc",
     "lint": "eslint --ext .{ts,js} src --fix --no-error-on-unmatched-pattern",
     "cli": "node --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",

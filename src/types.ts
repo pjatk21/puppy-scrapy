@@ -5,6 +5,9 @@ export enum DateFormats {
   dateDMYHMS = 'dd.MM.yyyy HH:mm:ss',
 }
 
+/**
+ * @deprecated
+ */
 export type ScheduleEntry = {
   begin: DateTime
   end: DateTime
