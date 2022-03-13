@@ -38,6 +38,8 @@ export class PublicScheduleScrapper extends ScrapperBase {
     this.logger?.debug('Aquired %s candidates', entriesAll.length)
     const entries: HandledElement[] = []
 
+    let removedReservations = 0
+
     // Filter non-reservation items
     for (const he of entriesAll) {
       const blockColor = await he
@@ -45,10 +47,14 @@ export class PublicScheduleScrapper extends ScrapperBase {
         .then((props) => props.getProperty('background-color'))
         .then((props) => props.jsonValue())
       if (blockColor !== 'rgb(124, 132, 132)') entries.push(he)
-      else this.logger?.info('Removed reservation')
+      else removedReservations++
     }
 
-    this.logger?.debug('Reduced to %s candidates', entries.length)
+    this.logger?.debug(
+      'Removed %s reservations, reduced to %s candidates',
+      removedReservations,
+      entries.length
+    )
 
     return entries ?? []
   }
