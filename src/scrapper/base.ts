@@ -62,12 +62,15 @@ export abstract class ScrapperBase {
    * This method reduces size of elements provided by prepare()
    */
   protected async reduce(elements: unknown[]): Promise<unknown[]> {
-    return elements.slice(
+    const e = elements.slice(
       this.options.skip,
       this.options.limit
         ? this.options.limit + (this.options.skip ?? 0)
         : undefined
     )
+
+    this.logger?.debug('Sliced to %s candidates', e.length)
+    return e
   }
 
   /**
