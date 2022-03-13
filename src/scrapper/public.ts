@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon'
+import puppeteer from 'puppeteer'
 import { HandledElement } from '..'
 import { DateFormats } from '../types'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from './base'
@@ -84,11 +85,12 @@ export class PublicScheduleScrapper extends ScrapperBase {
       try {
         await this.activePage?.waitForSelector('#RadToolTipManager1RTMPanel', {
           visible: true,
-          timeout: this.options.timeout ?? 5000,
+          timeout: this.options.timeout,
         })
       } catch (error) {
-        this.logger?.error(error)
-        this.emit(ScrapperEvent.ERROR, htmlId, { error: error as Error })
+        if (error instanceof puppeteer.errors.TimeoutError)
+          this.logger?.warn({ msg: error.message })
+        else this.logger?.error({ msg: 'Unknown error', error })
         continue
       }
 
