@@ -21,6 +21,7 @@ const cliLogger =
           target: 'pino-pretty',
           options: { translateTime: true },
         },
+        level: 'debug',
       })
 
 yargs(hideBin(process.argv))
