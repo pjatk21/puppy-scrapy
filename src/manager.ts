@@ -101,7 +101,9 @@ export class WorkerManager {
     const scrapUntil = DateTime.fromISO(scrapArgs.scrapUntil).setZone()
 
     this.logger.info('Scrapping until %s...', scrapArgs.scrapUntil)
-    let activeDate = DateTime.now()
+    let activeDate = scrapArgs.scrapStart
+      ? DateTime.fromISO(scrapArgs.scrapStart)
+      : DateTime.now()
 
     while (activeDate < scrapUntil) {
       this.scrapper.overwriteConfig({

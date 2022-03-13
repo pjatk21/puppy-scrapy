@@ -20,14 +20,16 @@ export class Keychain {
   static generate(name?: string) {
     const config = new Conf<ConfigSchemaTypings>({
       configName: 'identity',
-      cwd: '.',
+      cwd: './passport',
     })
 
     config.set('creationDate', new Date())
     config.set('uuid', randomUUID())
     config.set(
       'name',
-      name ?? `altscrap-${config.get('uuid').slice(0, 6)} at ${hostname()}`
+      name ??
+        process.env.SCRAPPER_NAME ??
+        `altscrap-${config.get('uuid').slice(0, 6)} at ${hostname()}`
     )
     config.set('secret', Keychain.generateSecret(config.get('name')))
     console.log(config.path)
@@ -52,7 +54,7 @@ export class Keychain {
         },
       },
       configName: 'identity',
-      cwd: '.',
+      cwd: './passport',
     })
     if (
       !(
