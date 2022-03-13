@@ -26,4 +26,4 @@ RUN yarn build
 ENV NODE_ENV=production \
     TZ=Europe/Warsaw
 
-ENTRYPOINT yarn cli loop
+ENTRYPOINT yarn start
