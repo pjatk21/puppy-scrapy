@@ -1,10 +1,18 @@
 import { DateTime } from 'luxon'
 import { HandledElement } from '..'
-import { DateFormats, ScheduleEntry } from '../types'
-import { ScrapperBase, ScrapperEvent } from './base'
+import { DateFormats } from '../types'
+import { ScrapperBase, ScrapperEvent, ScrapperOptions } from './base'
 
 export class PublicScheduleScrapper extends ScrapperBase {
   public isPrivateEndpoint = false
+
+  public overwriteConfig(newConfig: Partial<ScrapperOptions>) {
+    this.logger?.warn({
+      msg: 'Overwriting current configutration!',
+      ...newConfig,
+    })
+    this.options = { ...this.options, ...newConfig }
+  }
 
   private async updateDate() {
     if (this.options.setDate) {
