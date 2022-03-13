@@ -1,16 +1,11 @@
 #!/usr/bin/env node --experimental-specifier-resolution=node
-import { DateTime } from 'luxon'
 import pino from 'pino'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { getBrowser } from '.'
-import { PublicScheduleScrapper } from './scrapper/public'
-import { DateFormats } from './types'
 import 'dotenv/config'
-import { existsSync, writeFileSync } from 'fs'
-import { ScrapperEvent } from './scrapper/base'
+import { existsSync } from 'fs'
 import { WorkerManager } from './manager'
-import { Manager } from 'socket.io-client'
 import { Keychain } from './keychain'
 
 const cliLogger =

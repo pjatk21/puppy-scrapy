@@ -102,7 +102,10 @@ export abstract class ScrapperBase {
    */
   public async on(
     event: ScrapperEvent,
-    callback: (htmlId: string, context: { body?: string; error?: Error }) => void
+    callback: (
+      htmlId: string,
+      context: { body?: string; error?: Error }
+    ) => void
   ) {
     this.events.on(event, callback)
   }
