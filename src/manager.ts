@@ -40,6 +40,12 @@ export class WorkerManager {
       logger
     )
 
+    this.logger.info(
+      'Identity loaded: %s (%s)...',
+      new Keychain().read().name,
+      new Keychain().read().uuid
+    )
+
     // set upload event (executed after each schedule entry scrapped)
     this.scrapper.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
       this.transporter(htmlId, context)
