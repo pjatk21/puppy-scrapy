@@ -1,49 +1,31 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
-import { Browser } from 'puppeteer'
 import { io } from 'socket.io-client'
 import {
   HypervisorEvents,
   HypervisorScrapperCommands,
   HypervisorScrapperState as HSState,
-} from './altapi/hypevisor-enums'
-import { Keychain } from './keychain'
-import { ScrapperEvent, ScrapperOptions } from './scrapper/base'
-import { PublicScheduleScrapper } from './scrapper/public'
-import { HypervisorScrapArgs } from './altapi/hypervisor-types'
+} from '../altapi/hypevisor-enums'
+import { Keychain } from '../keychain'
+import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../scrapper/base'
+import { HypervisorScrapArgs } from '../altapi/hypervisor-types'
 
 export type ManagerConfig = {
   gateway: string
   scrapperOptions?: ScrapperOptions
 }
 
-export class WorkerManager {
-  private scrapper: PublicScheduleScrapper
+export abstract class ManagerBase {
+  protected scrapper?: ScrapperBase
   readonly socket: ReturnType<typeof io>
-  private pendingPromise: Promise<unknown> | null = null
+  protected pendingPromise: Promise<unknown> | null = null
 
-  constructor(
-    private browser: Browser,
-    protected readonly logger: Logger,
-    configuration: ManagerConfig
-  ) {
+  constructor(protected readonly logger: Logger, configuration: ManagerConfig) {
     // setup socket
     this.socket = io(configuration.gateway, {
       autoConnect: false,
       transports: ['websocket', 'polling'],
     })
-
-    // create scrapper instance
-    this.scrapper = new PublicScheduleScrapper(
-      this.browser,
-      configuration.scrapperOptions,
-      logger
-    )
-
-    // set upload event (executed after each schedule entry scrapped)
-    this.scrapper.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
-      this.transporter(htmlId, context)
-    )
   }
 
   /**
@@ -51,7 +33,7 @@ export class WorkerManager {
    * @param htmlId id property from html, used as task identifier
    * @param context payload which will be sent to the server
    */
-  private transporter(
+  protected transporter(
     htmlId: string,
     context: { body?: string; error?: Error }
   ) {
@@ -67,7 +49,7 @@ export class WorkerManager {
    * Reports state to the hypervisor
    * @param state
    */
-  private updateState(state: HSState) {
+  protected updateState(state: HSState) {
     this.socket.emit(HypervisorEvents.STATE, state)
     this.logger.info('Updated state to %s', state)
   }
@@ -76,7 +58,7 @@ export class WorkerManager {
    * Command dispatcher
    * @param ev command issued by hypervisor
    */
-  private handleCommand(ev: HypervisorScrapperCommands, arg: unknown) {
+  protected handleCommand(ev: HypervisorScrapperCommands, arg: unknown) {
     this.logger.info({ ev, arg })
     this.updateState(HSState.WORKING)
 
@@ -97,7 +79,8 @@ export class WorkerManager {
     }
   }
 
-  private async manageScrap(scrapArgs: HypervisorScrapArgs) {
+  protected async manageScrap(scrapArgs: HypervisorScrapArgs) {
+    if (!this.scrapper) throw new Error("Scrapper hasn't been initalized!")
     const scrapUntil = DateTime.fromISO(scrapArgs.scrapUntil).setZone()
 
     this.logger.info('Scrapping until %s...', scrapArgs.scrapUntil)
@@ -120,7 +103,7 @@ export class WorkerManager {
   /**
    * This method registers scrapper in the hypervisor.
    */
-  private register() {
+  protected register() {
     this.logger.info(
       'Connected to gateway! ID: "%s", transport: %s',
       this.socket.id,
@@ -131,12 +114,25 @@ export class WorkerManager {
 
     this.socket.once(HypervisorEvents.VISA, () => {
       this.logger.info('Visa received!')
+
+      // Setup events
+      this.initTransportEvent()
       this.socket.on(HypervisorEvents.COMMAND, (ev, arg) =>
         this.handleCommand(ev, arg)
       )
+
+      // Mark scrapper as ready to work
       this.updateState(HSState.READY)
-      // this.handleCommand(HypervisorScrapperCommands.SCRAP, {})
     })
+  }
+
+  /**
+   * Set upload event (executed after each schedule entry scrapped)
+   */
+  protected initTransportEvent() {
+    this.scrapper?.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
+      this.transporter(htmlId, context)
+    )
   }
 
   /**
@@ -144,6 +140,12 @@ export class WorkerManager {
    */
   start() {
     this.logger.info('Starting manager...')
+    this.logger.debug({
+      msg: 'Runtime',
+      scrapper: this.scrapper?.constructor.name,
+      node: process.version,
+      version: process.env.npm_package_version,
+    })
     this.socket.connect()
     this.socket.once('connect', () => this.register())
 

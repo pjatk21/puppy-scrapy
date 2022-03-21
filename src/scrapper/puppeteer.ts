@@ -1,6 +1,19 @@
-import { Logger } from "pino";
-import { Page, Browser, EventEmitter } from "puppeteer";
-import { ScrapperBase, ScrapperEvent, ScrapperOptions } from "./base";
+import { Logger } from 'pino'
+import { Page, Browser } from 'puppeteer'
+import { ScrapperBase, ScrapperOptions } from './base'
+import puppeteer from 'puppeteer'
+
+export async function getBrowser() {
+  switch (process.env.NODE_ENV) {
+    case 'production':
+      return await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+    default:
+      return await puppeteer.launch({ headless: true })
+  }
+}
 
 export abstract class ScrapperPuppeteer extends ScrapperBase {
   public abstract readonly isPrivateEndpoint: boolean

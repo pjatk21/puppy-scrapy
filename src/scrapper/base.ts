@@ -17,18 +17,6 @@ export type ScrapperOptions = {
   repeatFailures?: boolean
 }
 
-export async function getBrowser() {
-  switch (process.env.NODE_ENV) {
-    case 'production':
-      return await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox'],
-      })
-    default:
-      return await puppeteer.launch({ headless: true })
-  }
-}
-
 export enum ScrapperEvent {
   FETCH = 'fetch',
   ERROR = 'error',
@@ -36,7 +24,7 @@ export enum ScrapperEvent {
 
 export abstract class ScrapperBase {
   public abstract readonly isPrivateEndpoint: boolean
-  private events = new EventEmitter()
+  protected events = new EventEmitter()
 
   constructor(
     protected options: ScrapperOptions = {},
@@ -48,6 +36,14 @@ export abstract class ScrapperBase {
       // Perform checks required privare endpoint
       if (!this.options.credentials) throw new Error('Missing credentials')
     }
+  }
+
+  public overwriteConfig(newConfig: Partial<ScrapperOptions>) {
+    this.logger?.warn({
+      msg: 'Overwriting current configutration!',
+      ...newConfig,
+    })
+    this.options = { ...this.options, ...newConfig }
   }
 
   /**

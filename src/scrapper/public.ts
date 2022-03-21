@@ -2,19 +2,11 @@ import { DateTime } from 'luxon'
 import puppeteer from 'puppeteer'
 import { HandledElement } from '..'
 import { DateFormats } from '../types'
-import { ScrapperBase, ScrapperEvent, ScrapperOptions } from './base'
+import { ScrapperEvent } from './base'
 import { ScrapperPuppeteer } from './puppeteer'
 
 export class PublicScheduleScrapper extends ScrapperPuppeteer {
   public isPrivateEndpoint = false
-
-  public overwriteConfig(newConfig: Partial<ScrapperOptions>) {
-    this.logger?.warn({
-      msg: 'Overwriting current configutration!',
-      ...newConfig,
-    })
-    this.options = { ...this.options, ...newConfig }
-  }
 
   private async updateDate() {
     if (this.options.setDate) {

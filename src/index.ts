@@ -1,1 +1,2 @@
-export { getBrowser, HandledElement } from './scrapper/base'
+export { HandledElement } from './scrapper/base'
+export { getBrowser } from './scrapper/puppeteer'
