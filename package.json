@@ -46,6 +46,6 @@
     "alt-scrap": "./dist/cli.js"
   },
   "engines": {
-    "node": "16"
+    "node": ">=16"
   }
 }
