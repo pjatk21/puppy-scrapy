@@ -7,7 +7,6 @@ import 'dotenv/config'
 import { existsSync } from 'fs'
 import { WorkerManager } from './manager/worker'
 import { Keychain } from './keychain'
-import { SigmaBridge } from './scrapper/sigma/bridge'
 import { BridgeManager } from './manager/bridge'
 
 const cliLogger =

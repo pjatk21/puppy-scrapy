@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
-import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer'
+import { ElementHandle } from 'puppeteer'
 import { EventEmitter } from 'events'
 
 export type HandledElement = ElementHandle<Element>
