@@ -7,6 +7,7 @@ import 'dotenv/config'
 import { existsSync } from 'fs'
 import { WorkerManager } from './manager'
 import { Keychain } from './keychain'
+import { SigmaBridge } from './sigma/bridge'
 
 const cliLogger =
   process.env.NODE_ENV === 'production'
@@ -49,6 +50,14 @@ yargs(hideBin(process.argv))
       } else {
         Keychain.generate(name)
       }
+    }
+  )
+  .command(
+    'bridge',
+    'Run sigma scrapper with alt scrap translation layer',
+    async () => {
+      const manager = new SigmaBridge(undefined, cliLogger)
+      // manager.start()
     }
   )
   .command(
