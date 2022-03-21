@@ -5,9 +5,10 @@ import { hideBin } from 'yargs/helpers'
 import { getBrowser } from '.'
 import 'dotenv/config'
 import { existsSync } from 'fs'
-import { WorkerManager } from './manager'
+import { WorkerManager } from './manager/worker'
 import { Keychain } from './keychain'
-import { SigmaBridge } from './sigma/bridge'
+import { SigmaBridge } from './scrapper/sigma/bridge'
+import { BridgeManager } from './manager/bridge'
 
 const cliLogger =
   process.env.NODE_ENV === 'production'
@@ -21,9 +22,10 @@ const cliLogger =
       })
 
 yargs(hideBin(process.argv))
-  .option('api', {
-    description: 'URL for API, can be set by env ALTAPI_URL.',
-    default: process.env.ALTAPI_URL ?? 'https://altapi.kpostek.dev/v1',
+  .option('gateway', {
+    description:
+      'URL for API websocket gateway, can be set by env ALTAPI_GATEWAY.',
+    default: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
   })
   .command(
     'init',
@@ -55,18 +57,20 @@ yargs(hideBin(process.argv))
   .command(
     'bridge',
     'Run sigma scrapper with alt scrap translation layer',
-    async () => {
-      const manager = new SigmaBridge(undefined, cliLogger)
-      // manager.start()
+    (yargs) => yargs,
+    async ({ gateway }) => {
+      const manager = new BridgeManager(cliLogger, { gateway })
+      manager.start()
     }
   )
   .command(
     'worker',
     'Run scrapper in worker mode (managed by hypervisor)',
-    async () => {
+    (yargs) => yargs,
+    async ({ gateway }) => {
       const browser = await getBrowser()
       const manager = new WorkerManager(browser, cliLogger, {
-        gateway: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
+        gateway,
       })
       manager.start()
     }
