@@ -39,7 +39,7 @@
     "start": "yarn cli init --ignore && yarn cli worker",
     "build": "yarn lint && rimraf dist && tsc",
     "lint": "eslint --ext .{ts,js} src --fix --no-error-on-unmatched-pattern",
-    "cli": "node --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",
+    "cli": "node --no-warnings --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",
     "docker": "docker run --rm -e MANAGER_URL=ws://host.docker.internal:9090 ghcr.io/pjatk21/pjatk-scraper:altapi"
   },
   "bin": {
