@@ -3,8 +3,9 @@ import puppeteer from 'puppeteer'
 import { HandledElement } from '..'
 import { DateFormats } from '../types'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from './base'
+import { ScrapperPuppeteer } from './puppeteer'
 
-export class PublicScheduleScrapper extends ScrapperBase {
+export class PublicScheduleScrapper extends ScrapperPuppeteer {
   public isPrivateEndpoint = false
 
   public overwriteConfig(newConfig: Partial<ScrapperOptions>) {

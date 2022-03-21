@@ -36,11 +36,9 @@ export enum ScrapperEvent {
 
 export abstract class ScrapperBase {
   public abstract readonly isPrivateEndpoint: boolean
-  protected activePage?: Page
   private events = new EventEmitter()
 
   constructor(
-    public browser: Browser,
     protected options: ScrapperOptions = {},
     public logger?: Logger
   ) {}
@@ -50,7 +48,6 @@ export abstract class ScrapperBase {
       // Perform checks required privare endpoint
       if (!this.options.credentials) throw new Error('Missing credentials')
     }
-    this.activePage = await this.browser.newPage()
   }
 
   /**
@@ -81,9 +78,7 @@ export abstract class ScrapperBase {
   /**
    * Called after scrap, reduce RAM usage, etc.
    */
-  protected async clean() {
-    await this.activePage?.close({ runBeforeUnload: true })
-  }
+  protected clean?(): Promise<void>
 
   /**
    * Higher level function, the entrypoint for user
@@ -93,7 +88,7 @@ export abstract class ScrapperBase {
     let results
     if (this.prepare) results = await this.reduce(await this.prepare())
     const product = await this.scrap(results)
-    await this.clean()
+    if (this.clean) await this.clean()
     return product
   }
 
