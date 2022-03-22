@@ -30,7 +30,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/pjatk21/alt-scrap:latest
-            ghcr.io/pjatk21/alt-scrap:${{ github.ref_name }}
-            ghcr.io/pjatk21/alt-scrap:${{ node -pe "require('./package.json')['version']" }}
+            ghcr.io/pjatk21/alt-scrap:${{github.ref_name}}
           cache-from: type=gha
           cache-to: type=gha,mode=max
