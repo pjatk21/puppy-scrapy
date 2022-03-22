@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
-import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer'
+import { ElementHandle } from 'puppeteer'
 import { EventEmitter } from 'events'
 
 export type HandledElement = ElementHandle<Element>
@@ -17,18 +17,6 @@ export type ScrapperOptions = {
   repeatFailures?: boolean
 }
 
-export async function getBrowser() {
-  switch (process.env.NODE_ENV) {
-    case 'production':
-      return await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox'],
-      })
-    default:
-      return await puppeteer.launch({ headless: true })
-  }
-}
-
 export enum ScrapperEvent {
   FETCH = 'fetch',
   ERROR = 'error',
@@ -36,11 +24,9 @@ export enum ScrapperEvent {
 
 export abstract class ScrapperBase {
   public abstract readonly isPrivateEndpoint: boolean
-  protected activePage?: Page
-  private events = new EventEmitter()
+  protected events = new EventEmitter()
 
   constructor(
-    public browser: Browser,
     protected options: ScrapperOptions = {},
     public logger?: Logger
   ) {}
@@ -50,7 +36,14 @@ export abstract class ScrapperBase {
       // Perform checks required privare endpoint
       if (!this.options.credentials) throw new Error('Missing credentials')
     }
-    this.activePage = await this.browser.newPage()
+  }
+
+  public overwriteConfig(newConfig: Partial<ScrapperOptions>) {
+    this.logger?.warn({
+      msg: 'Overwriting current configutration!',
+      ...newConfig,
+    })
+    this.options = { ...this.options, ...newConfig }
   }
 
   /**
@@ -81,9 +74,7 @@ export abstract class ScrapperBase {
   /**
    * Called after scrap, reduce RAM usage, etc.
    */
-  protected async clean() {
-    await this.activePage?.close({ runBeforeUnload: true })
-  }
+  protected clean?(): Promise<void>
 
   /**
    * Higher level function, the entrypoint for user
@@ -93,7 +84,7 @@ export abstract class ScrapperBase {
     let results
     if (this.prepare) results = await this.reduce(await this.prepare())
     const product = await this.scrap(results)
-    await this.clean()
+    if (this.clean) await this.clean()
     return product
   }
 

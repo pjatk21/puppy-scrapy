@@ -1,4 +1,4 @@
-FROM node:lts-alpine
+FROM node:17-alpine
 
 RUN apk add chromium git bash
 
