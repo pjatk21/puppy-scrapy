@@ -32,8 +32,12 @@ export class SigmaBridge extends ScrapperBase {
       scrapUntil: DateTime.now().plus({ days: 3 }).toISO(),
     } as HypervisorScrapArgs)
     this.logger?.warn('Simulating work...')
-    setTimeout(() => this.events.emit('FINISHED'), 5000) // replace this line with REAL logic
-    await new Promise((resolve) => this.events.once('FINISHED', resolve))
+    // setTimeout(() => this.events.emit('FINISHED'), 5000) // replace this line with REAL logic
+    await new Promise<void>((resolve) =>
+      this.connectedSigma?.on('message', (message) => {
+        if (message.toString() === 'finished') resolve()
+      })
+    )
     return
   }
 }
