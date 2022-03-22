@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { Logger } from 'pino'
 import { WebSocketServer, WebSocket } from 'ws'
 import { HypervisorScrapArgs } from '../../altapi/hypervisor-types'
-import { ScrapperBase, ScrapperOptions } from '../base'
+import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../base'
 
 export class SigmaBridge extends ScrapperBase {
   private wsServer: WebSocketServer
@@ -26,36 +26,52 @@ export class SigmaBridge extends ScrapperBase {
     )
     this.wsServer.once('connection', (client, message) => {
       this.logger?.info({
-        ...message,
         msg: 'Scrapper connected to the bridge!',
       })
       this.connectedSigma = client
 
       this.events.emit('scrp-conn')
-      this.connectedSigma.on('message', (x) =>
-        this.logger?.warn('NOT IMPLEMNTED DATA', x)
-      )
+
+      this.connectedSigma.on('message', (x) => {
+        try {
+          const message = x.toString()
+
+          if (message === 'finished') {
+            this.events.emit('scrp-finish')
+            this.logger?.info('Received finish signal')
+            return
+          }
+
+          const { htmlId, body } = JSON.parse(message) as {
+            htmlId: string
+            body: string
+          }
+
+          this.logger?.debug('Received %s, size %s', htmlId, body.length)
+          this.emit(ScrapperEvent.FETCH, htmlId, { body })
+        } catch (err) {
+          this.logger?.error(err)
+        }
+      })
+
       this.connectedSigma.on('close', () => {
-        this.logger?.warn('Connection closed! Reseting!')
-        this.connectedSigma = undefined
+        this.logger?.warn('Connection closed! Exit!')
+        this.connectedSigma?.close()
+        process.exit()
       })
     })
   }
 
   protected async scrap(): Promise<unknown> {
-    this.logger?.info('Sending exec...')
+    this.logger?.info('Forwarding scrap request...')
+
     this.connectedSigma?.send(
       JSON.stringify({
-        scrapUntil: DateTime.now().plus({ days: 3 }).toISO(),
-      })
+        scrapUntil: this.options.setDate?.toISO() ?? DateTime.now().toISO(),
+      } as HypervisorScrapArgs)
     )
-    this.logger?.warn('Simulating work...')
-    // setTimeout(() => this.events.emit('FINISHED'), 5000) // replace this line with REAL logic
-    await new Promise<void>((resolve) =>
-      this.connectedSigma?.on('message', (message) => {
-        if (message.toString() === 'finished') resolve()
-      })
-    )
+
+    await new Promise<void>((resolve) => this.events.on('scrp-finish', resolve))
     return
   }
 }
