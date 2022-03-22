@@ -15,9 +15,23 @@ export type ManagerConfig = {
   scrapperOptions?: ScrapperOptions
 }
 
+/**
+ * The base class for implementing manager for any scrapper.
+ */
 export abstract class ManagerBase {
+  /**
+   * Scrapper to manage.
+   */
   protected scrapper?: ScrapperBase
+
+  /**
+   * Socket used for communication with gateway.
+   */
   readonly socket: ReturnType<typeof io>
+
+  /**
+   * Used for indicate if task is running.
+   */
   protected pendingPromise: Promise<unknown> | null = null
 
   constructor(protected readonly logger: Logger, configuration: ManagerConfig) {
@@ -28,10 +42,13 @@ export abstract class ManagerBase {
     })
   }
 
+  /**
+   * A promise which will be awaited to change state from start to ready.
+   */
   public isReady: Promise<void> = new Promise((resolve) => resolve())
 
   /**
-   * Sends body or error to the server, the preffered way to upload data to the server
+   * Sends body or error to the server, the preffered way to upload data to the server.
    * @param htmlId id property from html, used as task identifier
    * @param context payload which will be sent to the server
    */
@@ -48,7 +65,7 @@ export abstract class ManagerBase {
   }
 
   /**
-   * Reports state to the hypervisor
+   * Reports state to the hypervisor.
    * @param state
    */
   protected updateState(state: HSState) {
@@ -57,7 +74,7 @@ export abstract class ManagerBase {
   }
 
   /**
-   * Command dispatcher
+   * Command dispatcher.
    * @param ev command issued by hypervisor
    */
   protected handleCommand(ev: HypervisorScrapperCommands, arg: unknown) {
@@ -81,6 +98,10 @@ export abstract class ManagerBase {
     }
   }
 
+  /**
+   * Main method for managing scrap process.
+   * @param scrapArgs arguments received from the server
+   */
   protected async manageScrap(scrapArgs: HypervisorScrapArgs) {
     if (!this.scrapper) throw new Error("Scrapper hasn't been initalized!")
     const scrapUntil = DateTime.fromISO(scrapArgs.scrapUntil).setZone()
@@ -129,7 +150,7 @@ export abstract class ManagerBase {
   }
 
   /**
-   * Set upload event (executed after each schedule entry scrapped)
+   * Set upload event (executed after each schedule entry scrapped).
    */
   protected initTransportEvent() {
     this.scrapper?.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
@@ -138,7 +159,7 @@ export abstract class ManagerBase {
   }
 
   /**
-   * Entrypoint of the scrapper
+   * Entrypoint of the scrapper.
    */
   start() {
     this.logger.info('Starting manager...')

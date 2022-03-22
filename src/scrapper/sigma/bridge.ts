@@ -4,6 +4,11 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { HypervisorScrapArgs } from '../../altapi/hypervisor-types'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../base'
 
+enum BridgeEvents {
+  SCRAPPER_CONNECTED = 'scrp-conn',
+  TASK_FINISHED = 'scrp-finish',
+}
+
 export class SigmaBridge extends ScrapperBase {
   private wsServer: WebSocketServer
   public isPrivateEndpoint = false
@@ -15,11 +20,21 @@ export class SigmaBridge extends ScrapperBase {
     this.setupConnection()
   }
 
-  public scrapperConnected: Promise<void> = new Promise((resolve) => {
+  /**
+   * This promise used for awaiting connection from sigma scrapper.
+   */
+  public isScrapperConnected: Promise<void> = new Promise((resolve) => {
+    if (this.connectedSigma) {
+      resolve()
+      return
+    }
     this.logger?.info('Awaiting for sigma scrapper connection')
-    this.events.once('scrp-conn', resolve)
+    this.events.once(BridgeEvents.SCRAPPER_CONNECTED, resolve)
   })
 
+  /**
+   * This method should be run onced! Creates event bindings and uploads some metadata to the server.
+   */
   private setupConnection() {
     this.wsServer.once('listening', () =>
       this.logger?.info('WS server for bridged comm is ready!')
@@ -30,14 +45,14 @@ export class SigmaBridge extends ScrapperBase {
       })
       this.connectedSigma = client
 
-      this.events.emit('scrp-conn')
+      this.events.emit(BridgeEvents.SCRAPPER_CONNECTED)
 
       this.connectedSigma.on('message', (x) => {
         try {
           const message = x.toString()
 
           if (message === 'finished') {
-            this.events.emit('scrp-finish')
+            this.events.emit(BridgeEvents.TASK_FINISHED)
             this.logger?.info('Received finish signal')
             return
           }
@@ -71,7 +86,9 @@ export class SigmaBridge extends ScrapperBase {
       } as HypervisorScrapArgs)
     )
 
-    await new Promise<void>((resolve) => this.events.on('scrp-finish', resolve))
+    await new Promise<void>((resolve) =>
+      this.events.on(BridgeEvents.TASK_FINISHED, resolve)
+    )
     return
   }
 }

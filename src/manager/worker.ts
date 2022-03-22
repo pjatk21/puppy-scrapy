@@ -3,6 +3,9 @@ import { Browser } from 'puppeteer'
 import { PublicScheduleScrapper } from '../scrapper/public'
 import { ManagerBase, ManagerConfig } from './base'
 
+/**
+ * Class used for managing PJATK public scedule scrapper.
+ */
 export class WorkerManager extends ManagerBase {
   protected scrapper: PublicScheduleScrapper
 
