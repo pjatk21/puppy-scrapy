@@ -78,9 +78,13 @@ export class SigmaBridge extends ScrapperBase {
   }
 
   protected async scrap(): Promise<unknown> {
+    if (!this.connectedSigma) {
+      this.logger?.error('No scrapper connected!')
+      return
+    }
     this.logger?.info('Forwarding scrap request...')
 
-    this.connectedSigma?.send(
+    this.connectedSigma.send(
       JSON.stringify({
         scrapUntil: this.options.setDate?.toISO() ?? DateTime.now().toISO(),
       } as HypervisorScrapArgs)
