@@ -11,7 +11,7 @@ export class SigmaBridge extends ScrapperBase {
 
   constructor(protected options: ScrapperOptions = {}, public logger?: Logger) {
     super()
-    this.wsServer = new WebSocketServer({ port: 9090 })
+    this.wsServer = new WebSocketServer({ host: '0.0.0.0', port: 9090 })
     this.setupConnection()
   }
 
@@ -25,15 +25,25 @@ export class SigmaBridge extends ScrapperBase {
       this.logger?.info('WS server for bridged comm is ready!')
     )
     this.wsServer.once('connection', (client, message) => {
-      this.logger?.info(message)
+      this.logger?.info({
+        ...message,
+        msg: 'Scrapper connected to the bridge!',
+      })
       this.connectedSigma = client
 
       this.events.emit('scrp-conn')
-      client.on('message', (x) => this.logger?.warn('NOT IMPLEMNTED DATA', x))
+      this.connectedSigma.on('message', (x) =>
+        this.logger?.warn('NOT IMPLEMNTED DATA', x)
+      )
+      this.connectedSigma.on('close', () => {
+        this.logger?.warn('Connection closed! Exiting!')
+        process.exit()
+      })
     })
   }
 
   protected async scrap(): Promise<unknown> {
+    this.logger?.info('Sending exec...')
     this.connectedSigma?.send(
       JSON.stringify({
         scrapUntil: DateTime.now().plus({ days: 3 }).toISO(),
