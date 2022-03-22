@@ -36,8 +36,8 @@ export class SigmaBridge extends ScrapperBase {
         this.logger?.warn('NOT IMPLEMNTED DATA', x)
       )
       this.connectedSigma.on('close', () => {
-        this.logger?.warn('Connection closed! Exiting!')
-        process.exit()
+        this.logger?.warn('Connection closed! Reseting!')
+        this.connectedSigma = undefined
       })
     })
   }
