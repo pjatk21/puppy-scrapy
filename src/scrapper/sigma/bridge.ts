@@ -15,6 +15,11 @@ export class SigmaBridge extends ScrapperBase {
     this.setupConnection()
   }
 
+  public scrapperConnected: Promise<void> = new Promise((resolve) => {
+    this.logger?.info('Awaiting for sigma scrapper connection')
+    this.events.once('scrp-conn', resolve)
+  })
+
   private setupConnection() {
     this.wsServer.once('listening', () =>
       this.logger?.info('WS server for bridged comm is ready!')
@@ -23,6 +28,7 @@ export class SigmaBridge extends ScrapperBase {
       this.logger?.info(message)
       this.connectedSigma = client
 
+      this.events.emit('scrp-conn')
       client.on('message', (x) => this.logger?.warn('NOT IMPLEMNTED DATA', x))
     })
   }

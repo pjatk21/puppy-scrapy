@@ -28,6 +28,8 @@ export abstract class ManagerBase {
     })
   }
 
+  public isReady: Promise<void> = new Promise((resolve) => resolve())
+
   /**
    * Sends body or error to the server, the preffered way to upload data to the server
    * @param htmlId id property from html, used as task identifier
@@ -121,8 +123,8 @@ export abstract class ManagerBase {
         this.handleCommand(ev, arg)
       )
 
-      // Mark scrapper as ready to work
-      this.updateState(HSState.READY)
+      // Wait and mark it as ready
+      this.isReady.then(() => this.updateState(HSState.READY))
     })
   }
 
