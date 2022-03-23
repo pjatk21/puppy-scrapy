@@ -4,7 +4,6 @@ services:
   scrapper:
     image: ghcr.io/pjatk21/pjatk-scraper:altapi
     environment:
-      - SCRAPPER_NAME=Rusty (bridged)
       - MANAGER_URL=ws://host.docker.internal:9090
     depends_on:
       - geckodriver

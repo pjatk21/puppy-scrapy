@@ -1,6 +1,5 @@
 import Conf from 'conf'
 import { createHash, randomBytes, randomUUID } from 'crypto'
-import { hostname } from 'os'
 
 type ConfigSchemaTypings = {
   uuid: string
@@ -17,7 +16,7 @@ export class Keychain {
       .digest('hex')
   }
 
-  static generate(name?: string) {
+  static generate(name?: string, bridged = false) {
     const config = new Conf<ConfigSchemaTypings>({
       configName: 'identity',
       cwd: './passport',
@@ -25,12 +24,13 @@ export class Keychain {
 
     config.set('creationDate', new Date())
     config.set('uuid', randomUUID())
-    config.set(
-      'name',
+
+    const passportName =
       name ??
-        process.env.SCRAPPER_NAME ??
-        `altscrap-${config.get('uuid').slice(0, 6)} at ${hostname()}`
-    )
+      process.env.SCRAPPER_NAME ??
+      `${bridged ? 'bridge' : 'altscpr'}-${config.get('uuid').slice(0, 6)}`
+
+    config.set('name', passportName)
     config.set('secret', Keychain.generateSecret(config.get('name')))
     console.log(config.path)
   }

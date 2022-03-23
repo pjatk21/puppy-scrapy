@@ -36,15 +36,16 @@ yargs(hideBin(process.argv))
           type: 'boolean',
         })
         .option('force', { description: 'Always overwrite.', type: 'boolean' })
+        .option('bridge', { description: 'Changes prefix".', type: 'boolean' })
         .option('name', { description: 'Name of scrapper.', type: 'string' }),
-    ({ ignore, force, name }) => {
+    ({ ignore, force, name, bridge }) => {
       if (ignore && force) throw new Error("You can't pass both flags!")
 
       if (existsSync('identity.json')) {
         if (ignore) console.debug('Identity already exitst! Ignoring...')
         else if (force) {
           console.debug('Overwritting identity...')
-          Keychain.generate(name)
+          Keychain.generate(name, bridge)
         } else {
           throw new Error('Identity exits! Pass --ignore or --force')
         }
