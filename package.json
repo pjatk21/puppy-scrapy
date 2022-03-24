@@ -37,14 +37,13 @@
   },
   "scripts": {
     "start": "yarn cli init --ignore && yarn cli worker",
-    "start:bridge": "yarn cli init --ignore --bridge && yarn cli bridge",
     "build": "yarn lint && rimraf dist && tsc",
     "lint": "eslint --ext .{ts,js} src --fix --no-error-on-unmatched-pattern",
     "cli": "node --no-warnings --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",
-    "docker:sigma": "docker-compose -f docker-compose.sigma.yml up"
-  },
-  "bin": {
-    "alt-scrap": "./dist/cli.js"
+    "cli.dist": "node --no-warnings --experimental-specifier-resolution=node dist/cli.js",
+    "docker.entrypoint": "yarn cli.dist init --ignore && yarn cli.dist worker",
+    "docker.entrypoint.bridge": "yarn cli.dist init --ignore --bridge && yarn cli.dist bridge",
+    "docker.sigma": "docker-compose -f docker-compose.sigma.yml up"
   },
   "engines": {
     "node": ">=16"
