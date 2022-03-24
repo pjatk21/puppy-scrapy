@@ -131,4 +131,5 @@ dist
 
 # Project related ignores
 upload*.json
-identity.json
+passport/
+.DS_Store
