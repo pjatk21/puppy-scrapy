@@ -98,6 +98,9 @@ export class PublicScheduleScrapper extends ScrapperPuppeteer {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       entries.push(tooltipContent!)
 
+      // Clear previous tooltip
+      await this.activePage?.keyboard.press('Escape')
+
       // Log remaining time
       const avgTime = DateTime.local().diff(beginTime).toMillis() / ++count
       const timeLeft = avgTime * ((elements?.length ?? 0) - count)
