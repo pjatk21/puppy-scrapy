@@ -74,32 +74,32 @@ export class PublicScheduleScrapper extends ScrapperPuppeteer {
       // Hover mouse over box
       await he.click()
 
-      // Wait for tooltip appear
       try {
+        // Wait for tooltip appear
         await this.activePage?.waitForSelector('#RadToolTipManager1RTMPanel', {
           visible: true,
           timeout: this.options.timeout,
         })
+
+        // Read content of tooltip
+        const tooltipContent = await this.activePage?.$eval(
+          '#RadToolTipManager1RTMPanel',
+          (elem) => elem.innerHTML
+        )
+
+        // Save data
+        if (tooltipContent) {
+          this.emit(ScrapperEvent.FETCH, htmlId, { body: tooltipContent })
+          entries.push(tooltipContent)
+        }
       } catch (error) {
         if (error instanceof puppeteer.errors.TimeoutError)
           this.logger?.warn({ msg: error.message })
         else this.logger?.error({ msg: 'Unknown error', error })
-        continue
+      } finally {
+        // Clear previous tooltip
+        await this.activePage?.keyboard.press('Escape')
       }
-
-      // Read content of tooltip
-      const tooltipContent = await this.activePage?.$eval(
-        '#RadToolTipManager1RTMPanel',
-        (elem) => elem.innerHTML
-      )
-
-      // Save data
-      this.emit(ScrapperEvent.FETCH, htmlId, { body: tooltipContent })
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      entries.push(tooltipContent!)
-
-      // Clear previous tooltip
-      await this.activePage?.keyboard.press('Escape')
 
       // Log remaining time
       const avgTime = DateTime.local().diff(beginTime).toMillis() / ++count
