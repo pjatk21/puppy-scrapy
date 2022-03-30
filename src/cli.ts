@@ -8,6 +8,7 @@ import { existsSync } from 'fs'
 import { WorkerManager } from './manager/worker'
 import { Keychain } from './keychain'
 import { BridgeManager } from './manager/bridge'
+import { StealerManager } from './manager/stealer'
 
 const cliLogger =
   process.env.NODE_ENV === 'production'
@@ -72,6 +73,26 @@ yargs(hideBin(process.argv))
       const manager = new WorkerManager(browser, cliLogger, {
         gateway,
       })
+      manager.start()
+    }
+  )
+  .command(
+    'stealer',
+    'Use HTTP forgery to get data much faster (experimental)',
+    (yargs) =>
+      yargs
+        .option('delayPerEntry', {
+          description: 'Delay set for each query.',
+          default: 90,
+          type: 'number',
+        })
+        .option('delayConst', { default: 1_000 * 5, type: 'number' }),
+    async ({ gateway, delayPerEntry }) => {
+      const manager = new StealerManager(
+        cliLogger,
+        { gateway },
+        { ratio: delayPerEntry }
+      )
       manager.start()
     }
   )
