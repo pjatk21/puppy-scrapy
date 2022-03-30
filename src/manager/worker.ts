@@ -5,6 +5,7 @@ import { ManagerBase, ManagerConfig } from './base'
 
 /**
  * Class used for managing PJATK public scedule scrapper.
+ * @deprecated use stealer instead
  */
 export class WorkerManager extends ManagerBase {
   protected scrapper: PublicScheduleScrapper

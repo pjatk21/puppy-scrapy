@@ -5,6 +5,9 @@ import { DateFormats } from '../types'
 import { ScrapperEvent } from './base'
 import { ScrapperPuppeteer } from './puppeteer'
 
+/**
+ * @deprecated Use stealer instaed
+ */
 export class PublicScheduleScrapper extends ScrapperPuppeteer {
   public isPrivateEndpoint = false
 
