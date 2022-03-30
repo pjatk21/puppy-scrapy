@@ -43,7 +43,8 @@
     "lint": "eslint --ext .{ts,js} src --fix --no-error-on-unmatched-pattern",
     "cli": "node --no-warnings --experimental-specifier-resolution=node --loader ts-node/esm src/cli.ts",
     "cli.dist": "node --no-warnings --experimental-specifier-resolution=node dist/cli.js",
-    "docker.entrypoint": "yarn cli.dist init --ignore && yarn cli.dist worker",
+    "docker.entrypoint.worker": "yarn cli.dist init --ignore && yarn cli.dist worker",
+    "docker.entrypoint.stealer": "yarn cli.dist init --ignore && yarn cli.dist stealer",
     "docker.entrypoint.bridge": "yarn cli.dist init --ignore --bridge && yarn cli.dist bridge",
     "docker.sigma": "docker-compose -f docker-compose.sigma.yml up"
   },

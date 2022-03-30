@@ -22,4 +22,4 @@ ENV NODE_ENV=production \
 
 RUN yarn install
 
-ENTRYPOINT yarn docker.entrypoint
+ENTRYPOINT yarn docker.entrypoint.stealer
