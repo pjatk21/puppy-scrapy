@@ -80,13 +80,11 @@ yargs(hideBin(process.argv))
     'stealer',
     'Use HTTP forgery to get data much faster (experimental)',
     (yargs) =>
-      yargs
-        .option('delayPerEntry', {
-          description: 'Delay set for each query.',
-          default: 90,
-          type: 'number',
-        })
-        .option('delayConst', { default: 1_000 * 5, type: 'number' }),
+      yargs.option('delayPerEntry', {
+        description: 'Delay set for each query.',
+        default: 10,
+        type: 'number',
+      }),
     async ({ gateway, delayPerEntry }) => {
       const manager = new StealerManager(
         cliLogger,
