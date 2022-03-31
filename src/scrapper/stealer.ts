@@ -57,9 +57,6 @@ export class StealerScrapper extends ScrapperBase {
    */
   private updateBaseStates(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
-    assert(response.method === 'GET', 'Invalid request method!')
-
-    // Create DOM to parse states from hidden forms
     const frag = JSDOM.fragment(response.body)
     this.baseStates.viewState = (
       frag.querySelector('input[name="__VIEWSTATE"]') as HTMLInputElement
@@ -80,9 +77,6 @@ export class StealerScrapper extends ScrapperBase {
    */
   private updateBaseStatesFromDelta(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
-    assert(response.method === 'POST', 'Invalid request method!')
-
-    // split online CSV
     const shards = response.body.split('|')
     this.baseStates.viewState = shards[shards.indexOf('__VIEWSTATE') + 1]
     this.baseStates.eventValidation =
