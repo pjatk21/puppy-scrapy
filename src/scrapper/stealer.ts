@@ -53,6 +53,7 @@ export class StealerScrapper extends ScrapperBase {
 
   private updateBaseStates(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
+    assert(response.method === 'GET', 'Invalid request method!')
     const frag = JSDOM.fragment(response.body)
     this.baseStates.viewState = (
       frag.querySelector('input[name="__VIEWSTATE"]') as HTMLInputElement
@@ -69,6 +70,7 @@ export class StealerScrapper extends ScrapperBase {
 
   private updateBaseStatesFromDelta(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
+    assert(response.method === 'POST', 'Invalid request method!')
     const shards = response.body.split('|')
     this.baseStates.viewState = shards[shards.indexOf('__VIEWSTATE') + 1]
     this.baseStates.eventValidation =
