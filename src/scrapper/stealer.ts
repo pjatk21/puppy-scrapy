@@ -38,7 +38,7 @@ export class StealerScrapper extends ScrapperBase {
 
   private baseStates: Partial<BaseStates> = {}
 
-  public get baseStatesAsFormParts(): Record<string, string> {
+  private get baseStatesAsFormParts(): Record<string, string> {
     const { viewState, eventValidation, viewStateGenerator } = this.baseStates
     assert(
       viewState && eventValidation && viewStateGenerator,
@@ -51,9 +51,15 @@ export class StealerScrapper extends ScrapperBase {
     }
   }
 
+  /**
+   * Update ASP.NET states from GET responses
+   * @param response response from webservice
+   */
   private updateBaseStates(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
     assert(response.method === 'GET', 'Invalid request method!')
+
+    // Create DOM to parse states from hidden forms
     const frag = JSDOM.fragment(response.body)
     this.baseStates.viewState = (
       frag.querySelector('input[name="__VIEWSTATE"]') as HTMLInputElement
@@ -68,9 +74,15 @@ export class StealerScrapper extends ScrapperBase {
     ).value
   }
 
+  /**
+   * Update ASP.NET states from POST (delta=true) responses
+   * @param response response from webservice
+   */
   private updateBaseStatesFromDelta(response: Response<string>) {
     assert(response.statusCode === 200, 'Invalid status code!')
     assert(response.method === 'POST', 'Invalid request method!')
+
+    // split online CSV
     const shards = response.body.split('|')
     this.baseStates.viewState = shards[shards.indexOf('__VIEWSTATE') + 1]
     this.baseStates.eventValidation =
@@ -161,7 +173,7 @@ export class StealerScrapper extends ScrapperBase {
     const responses = await Promise.all(promises)
     const took = start.diffNow().negate()
     this.logger?.info(
-      'Day %s took %s. Query rate: %s q/s.',
+      'Day %s took %s. Scrap rate: %s req/s.',
       this.options.setDate,
       took.shiftTo('seconds', 'milliseconds').toHuman(),
       (responses.length / took.as('seconds')).toPrecision(3)
