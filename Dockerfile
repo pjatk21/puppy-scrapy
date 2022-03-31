@@ -22,4 +22,6 @@ ENV NODE_ENV=production \
 
 RUN yarn install
 
+VOLUME [ "/app/passport" ]
+
 ENTRYPOINT yarn docker.entrypoint.stealer
