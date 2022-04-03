@@ -16,7 +16,7 @@ export type PostDelays = {
   ratio: number
 }
 
-export class StealerScrapper extends ScrapperBase {
+export class StealerScrapper extends ScrapperBase<string> {
   constructor(
     options?: ScrapperOptions,
     logger?: Logger,
@@ -153,14 +153,16 @@ export class StealerScrapper extends ScrapperBase {
     return Array.from(allIds)
   }
 
-  protected async scrap(elements: string[]) {
+  protected async scrap(elements: string[]): Promise<string[]> {
     const start = DateTime.now()
     const promises = elements.map((elem) =>
       this.getDataOfId(elem)
         .then((r) => {
+          const htmlString = this.htmlFromResponse(r)
           this.emit(ScrapperEvent.FETCH, elem, {
-            body: this.htmlFromResponse(r),
+            body: htmlString,
           })
+          return htmlString
         })
         .catch((err) => this.logger?.error(err))
     )
@@ -181,6 +183,6 @@ export class StealerScrapper extends ScrapperBase {
       )
       await new Promise((resolve) => setTimeout(resolve, delay))
     }
-    return responses
+    return responses.filter((x) => typeof x === 'string') as string[]
   }
 }

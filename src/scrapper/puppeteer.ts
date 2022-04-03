@@ -15,7 +15,7 @@ export async function getBrowser() {
   }
 }
 
-export abstract class ScrapperPuppeteer extends ScrapperBase {
+export abstract class ScrapperPuppeteer<T> extends ScrapperBase<T> {
   public abstract readonly isPrivateEndpoint: boolean
   protected activePage?: Page
 

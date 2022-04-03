@@ -9,10 +9,11 @@ enum BridgeEvents {
   TASK_FINISHED = 'scrp-finish',
 }
 
-export class SigmaBridge extends ScrapperBase {
+export class SigmaBridge extends ScrapperBase<string> {
   private wsServer: WebSocketServer
   public isPrivateEndpoint = false
   private connectedSigma?: WebSocket
+  private elementsScrapped: string[] = []
 
   constructor(protected options: ScrapperOptions = {}, public logger?: Logger) {
     super()
@@ -62,6 +63,8 @@ export class SigmaBridge extends ScrapperBase {
             body: string
           }
 
+          this.elementsScrapped.push(body)
+
           this.logger?.debug('Received %s, size %s', htmlId, body.length)
           this.emit(ScrapperEvent.FETCH, htmlId, { body })
         } catch (err) {
@@ -77,12 +80,13 @@ export class SigmaBridge extends ScrapperBase {
     })
   }
 
-  protected async scrap(): Promise<unknown> {
+  protected async scrap(): Promise<string[]> {
     if (!this.connectedSigma) {
       this.logger?.error('No scrapper connected!')
-      return
+      return []
     }
     this.logger?.info('Forwarding scrap request...')
+    this.elementsScrapped = []
 
     this.connectedSigma.send(
       JSON.stringify({
@@ -93,6 +97,6 @@ export class SigmaBridge extends ScrapperBase {
     await new Promise<void>((resolve) =>
       this.events.on(BridgeEvents.TASK_FINISHED, resolve)
     )
-    return
+    return this.elementsScrapped
   }
 }

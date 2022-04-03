@@ -8,7 +8,7 @@ import { ScrapperPuppeteer } from './puppeteer'
 /**
  * @deprecated Use stealer instaed
  */
-export class PublicScheduleScrapper extends ScrapperPuppeteer {
+export class PublicScheduleScrapper extends ScrapperPuppeteer<string> {
   public isPrivateEndpoint = false
 
   private async updateDate() {

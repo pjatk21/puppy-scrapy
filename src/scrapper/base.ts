@@ -22,7 +22,7 @@ export enum ScrapperEvent {
   ERROR = 'error',
 }
 
-export abstract class ScrapperBase {
+export abstract class ScrapperBase<R = unknown> {
   public abstract readonly isPrivateEndpoint: boolean
   protected events = new EventEmitter()
 
@@ -69,7 +69,7 @@ export abstract class ScrapperBase {
   /**
    * This method serialize data into object, classes etc.
    */
-  protected abstract scrap(elements?: unknown[]): Promise<unknown>
+  protected abstract scrap(elements?: unknown[]): Promise<R[]>
 
   /**
    * Called after scrap, reduce RAM usage, etc.
@@ -79,7 +79,7 @@ export abstract class ScrapperBase {
   /**
    * Higher level function, the entrypoint for user
    */
-  public async getData(): Promise<unknown> {
+  public async getData(): Promise<R[]> {
     await this.begin()
     let results
     if (this.prepare) results = await this.reduce(await this.prepare())
