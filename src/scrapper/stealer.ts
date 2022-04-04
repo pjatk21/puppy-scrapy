@@ -23,9 +23,16 @@ export class StealerScrapper extends ScrapperBase<string> {
     private delays?: PostDelays
   ) {
     super(options, logger)
+    this.timestamps.scrapperInital = DateTime.now()
   }
 
   public isPrivateEndpoint = false
+
+  private readonly timestamps: Partial<{
+    scrapperInital: DateTime
+    sourceScrap: DateTime
+    targetScrap: DateTime
+  }> = {}
 
   private client = got.extend({
     headers: {
@@ -134,11 +141,16 @@ export class StealerScrapper extends ScrapperBase<string> {
       }
     )
     this.updateBaseStatesFromDelta(detailsResponse)
-    this.logger?.debug('Data for id "%s" fetched!', target_id)
+    this.logger?.debug(
+      'Data for id "%s" fetched in %sms!',
+      target_id,
+      detailsResponse.timings.end! - detailsResponse.timings.start
+    )
     return detailsResponse
   }
 
   async prepare() {
+    this.timestamps.sourceScrap = DateTime.now()
     const initialResponse = await this.client.get(
       'https://planzajec.pjwstk.edu.pl/PlanOgolny3.aspx'
     )
@@ -154,7 +166,7 @@ export class StealerScrapper extends ScrapperBase<string> {
   }
 
   protected async scrap(elements: string[]): Promise<string[]> {
-    const start = DateTime.now()
+    this.timestamps.targetScrap = DateTime.now()
     const promises = elements.map((elem) =>
       this.getDataOfId(elem)
         .then((r) => {
@@ -164,25 +176,61 @@ export class StealerScrapper extends ScrapperBase<string> {
           })
           return htmlString
         })
-        .catch((err) => this.logger?.error(err))
+        .catch(({ type, message }) =>
+          this.logger?.error({ errType: type, message })
+        )
     )
     const responses = await Promise.all(promises)
-    const took = start.diffNow().negate()
-    this.logger?.info(
-      'Day %s took %s. Scrap rate: %s req/s.',
-      this.options.setDate,
-      took.shiftTo('seconds', 'milliseconds').toHuman(),
-      (responses.length / took.as('seconds')).toPrecision(3)
-    )
+    this.logTimeStats(responses.length)
+
     if (this.delays) {
       const delay =
-        took.as('milliseconds') + this.delays.ratio * responses.length
+        (Math.random() + 0.5) * this.delays.ratio * (responses.length * 22)
       this.logger?.info(
         'Delays configured, waiting %s.',
-        Duration.fromMillis(delay).shiftTo('seconds', 'milliseconds').toHuman()
+        Duration.fromMillis(delay)
+          .shiftTo('minutes', 'seconds', 'milliseconds')
+          .toHuman()
       )
       await new Promise((resolve) => setTimeout(resolve, delay))
     }
     return responses.filter((x) => typeof x === 'string') as string[]
+  }
+
+  private logTimeStats(responsesCount: number) {
+    const now = DateTime.now()
+
+    const { scrapperInital, sourceScrap, targetScrap } = this.timestamps
+    if (!(scrapperInital && sourceScrap && targetScrap)) {
+      this.logger?.error('Missing timestamps! Skipping stats generation!')
+      return
+    }
+
+    this.logger?.info(
+      {
+        initalizing: sourceScrap
+          .diff(scrapperInital)
+          .shiftTo('seconds', 'milliseconds')
+          .toHuman(),
+        prepare: targetScrap
+          .diff(sourceScrap)
+          .shiftTo('seconds', 'milliseconds')
+          .toHuman(),
+        main: now
+          .diff(targetScrap)
+          .shiftTo('seconds', 'milliseconds')
+          .toHuman(),
+        overall: now
+          .diff(scrapperInital)
+          .shiftTo('seconds', 'milliseconds')
+          .toHuman(),
+        requestRate:
+          (responsesCount / now.diff(targetScrap).as('seconds')).toFixed(3) +
+          'r/s',
+        scrapSize: responsesCount,
+      },
+      'Timings for scrap of date %s',
+      this.options.setDate?.toISODate()
+    )
   }
 }
