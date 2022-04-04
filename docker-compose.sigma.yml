@@ -6,8 +6,4 @@ services:
     environment:
       - RUST_LOG=info
       - MANAGER_URL=ws://host.docker.internal:9090
-    depends_on:
-      - geckodriver
-  geckodriver:
-    image: instrumentisto/geckodriver:92.0-driver0.29.1
-    shm_size: 2g
+      - TIMEOUT_MILIS=10000
