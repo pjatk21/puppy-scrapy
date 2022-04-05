@@ -16,7 +16,7 @@ const cliLogger =
     : pino({
         transport: {
           target: 'pino-pretty',
-          options: { translateTime: true },
+          options: { translateTime: 'SYS:standard' },
         },
         level: 'debug',
       })
