@@ -82,7 +82,7 @@ yargs(hideBin(process.argv))
     (yargs) =>
       yargs.option('delayPerEntry', {
         description: 'Delay set for each query.',
-        default: 10,
+        default: 40,
         type: 'number',
       }),
     async ({ gateway, delayPerEntry }) => {
