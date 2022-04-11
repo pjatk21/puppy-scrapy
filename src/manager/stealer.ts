@@ -1,12 +1,12 @@
 import { Logger } from 'pino'
-import { PostDelays, StealerScrapper } from '../scrapper/stealer'
+import { ThrottlingOptions, StealerScrapper } from '../scrapper/stealer'
 import { ManagerBase, ManagerConfig } from './base'
 
 export class StealerManager extends ManagerBase {
   constructor(
     logger: Logger,
     configuration: ManagerConfig,
-    delays?: PostDelays
+    delays?: ThrottlingOptions
   ) {
     super(logger, configuration)
 

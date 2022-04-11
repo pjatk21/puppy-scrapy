@@ -18,7 +18,7 @@ const cliLogger =
           target: 'pino-pretty',
           options: { translateTime: 'SYS:standard' },
         },
-        level: 'debug',
+        level: process.env.PINO_LEVEL ?? 'debug',
       })
 
 yargs(hideBin(process.argv))
@@ -78,18 +78,24 @@ yargs(hideBin(process.argv))
   )
   .command(
     'stealer',
-    'Use HTTP forgery to get data much faster (experimental)',
+    'Use HTTP forgery to get data much faster (experimental). Try not to go faster than 20 requests per second for longer periods. (maxQueryRate (r/s) = (chunkSize/delayPerChunk) * 1000ms)',
     (yargs) =>
-      yargs.option('delayPerEntry', {
-        description: 'Delay set for each query.',
-        default: 40,
-        type: 'number',
-      }),
-    async ({ gateway, delayPerEntry }) => {
+      yargs
+        .option('delayPerChunk', {
+          description: 'Delay set for each chunk.',
+          default: 440,
+          type: 'number',
+        })
+        .option('chunkSize', {
+          description: 'Size of chunk of concurrent queries',
+          default: 4,
+          type: 'number',
+        }),
+    async ({ gateway, delayPerChunk, chunkSize }) => {
       const manager = new StealerManager(
         cliLogger,
         { gateway },
-        { ratio: delayPerEntry }
+        { chunkSize, delayPerChunk }
       )
       manager.start()
     }

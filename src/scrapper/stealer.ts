@@ -3,8 +3,10 @@ import type { Response } from 'got'
 import { JSDOM } from 'jsdom'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from './base'
 import assert from 'assert'
-import { DateTime, Duration } from 'luxon'
+import { DateTime } from 'luxon'
 import { Logger } from 'pino'
+import lodash from 'lodash'
+import { createHash } from 'crypto'
 
 type BaseStates = {
   viewState: string
@@ -12,18 +14,28 @@ type BaseStates = {
   viewStateGenerator: string
 }
 
-export type PostDelays = {
-  ratio: number
+export type ThrottlingOptions = {
+  delayPerChunk: number
+  chunkSize: number
 }
 
 export class StealerScrapper extends ScrapperBase<string> {
   constructor(
     options?: ScrapperOptions,
     logger?: Logger,
-    private delays?: PostDelays
+    private throttling?: ThrottlingOptions
   ) {
     super(options, logger)
     this.timestamps.scrapperInital = DateTime.now()
+    if (throttling?.chunkSize && throttling.delayPerChunk)
+      this.logger?.debug(
+        {
+          ...throttling,
+          maxQueryRate:
+            (throttling.chunkSize / throttling.delayPerChunk) * 1000,
+        },
+        'Throttler configuration'
+      )
   }
 
   public isPrivateEndpoint = false
@@ -161,41 +173,61 @@ export class StealerScrapper extends ScrapperBase<string> {
     const { body } = shouldUpdateDate
       ? await this.updateDate(this.options.setDate!.toISODate())
       : initialResponse
-    const allIds = new Set<string>(body.match(/\d+?;[z]/g) ?? [])
+    const allIds = Array.from(new Set(body.match(/\d+?;[z]/g) ?? [])).sort()
+    this.logger?.info(
+      {
+        hashOfAllIds: createHash('SHA1')
+          .update(allIds.join(' '))
+          .digest('hex')
+          .slice(0, 12),
+      },
+      'Hash of all ids'
+    )
 
-    return Array.from(allIds)
+    return allIds
   }
 
   protected async scrap(elements: string[]): Promise<string[]> {
     this.timestamps.targetScrap = DateTime.now()
-    const promises = elements.map((elem) =>
-      this.getDataOfId(elem)
-        .then((r) => {
-          const htmlString = this.htmlFromResponse(r)
-          this.emit(ScrapperEvent.FETCH, elem, {
-            body: htmlString,
-          })
-          return htmlString
-        })
-        .catch(({ type, message }) =>
-          this.logger?.error({ errType: type, message })
-        )
+
+    const responses: string[] = []
+
+    const chunks = lodash.chunk(
+      elements,
+      this.throttling?.chunkSize ?? elements.length
     )
-    const responses = await Promise.all(promises)
+
+    for (const i in chunks) {
+      const chunk = chunks[i]
+      this.logger?.debug('Fetching chunk %s of %s', i, chunks.length)
+
+      // this promise all ensure that you won't finish this chunk before delayPerChunk (query rate limiter)
+      await Promise.all([
+        Promise.all(
+          chunk.map((elem) =>
+            this.getDataOfId(elem)
+              .then((r) => {
+                const htmlString = this.htmlFromResponse(r)
+                this.emit(ScrapperEvent.FETCH, elem, {
+                  body: htmlString,
+                })
+                responses.push(htmlString)
+                return htmlString
+              })
+              .catch(({ type, message }) =>
+                this.logger?.error({ errType: type, message })
+              )
+          )
+        ),
+        new Promise((resolve) =>
+          setTimeout(resolve, this.throttling?.delayPerChunk)
+        ),
+      ])
+    }
+
     this.logTimeStats(responses.length)
 
-    if (this.delays) {
-      const delay =
-        (Math.random() + 0.5) * this.delays.ratio * (responses.length * 22)
-      this.logger?.info(
-        'Delays configured, waiting %s.',
-        Duration.fromMillis(delay)
-          .shiftTo('minutes', 'seconds', 'milliseconds')
-          .toHuman()
-      )
-      await new Promise((resolve) => setTimeout(resolve, delay))
-    }
-    return responses.filter((x) => typeof x === 'string') as string[]
+    return responses
   }
 
   private logTimeStats(responsesCount: number) {
@@ -209,10 +241,6 @@ export class StealerScrapper extends ScrapperBase<string> {
 
     this.logger?.info(
       {
-        initalizing: sourceScrap
-          .diff(scrapperInital)
-          .shiftTo('seconds', 'milliseconds')
-          .toHuman(),
         prepare: targetScrap
           .diff(sourceScrap)
           .shiftTo('seconds', 'milliseconds')
@@ -222,7 +250,7 @@ export class StealerScrapper extends ScrapperBase<string> {
           .shiftTo('seconds', 'milliseconds')
           .toHuman(),
         overall: now
-          .diff(scrapperInital)
+          .diff(sourceScrap)
           .shiftTo('seconds', 'milliseconds')
           .toHuman(),
         requestRate:
