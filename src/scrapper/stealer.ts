@@ -156,7 +156,8 @@ export class StealerScrapper extends ScrapperBase<string> {
     )
     this.updateBaseStates(initialResponse)
     const shouldUpdateDate =
-      DateTime.now().toISODate() === this.options.setDate?.toISODate()
+      DateTime.now().toISODate() !== this.options.setDate?.toISODate()
+    this.logger?.info({ shouldUpdateDate })
     const { body } = shouldUpdateDate
       ? await this.updateDate(this.options.setDate!.toISODate())
       : initialResponse
