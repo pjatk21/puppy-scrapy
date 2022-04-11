@@ -24,4 +24,5 @@ RUN yarn install
 
 VOLUME [ "/app/passport" ]
 
-ENTRYPOINT yarn docker.entrypoint.stealer
+ENTRYPOINT ["yarn", "docker.entrypoint.stealer"]
+CMD []
