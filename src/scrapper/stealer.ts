@@ -140,7 +140,7 @@ export class StealerScrapper extends ScrapperBase<string> {
         },
       }
     )
-    this.updateBaseStatesFromDelta(detailsResponse)
+    // this.updateBaseStatesFromDelta(detailsResponse)
     this.logger?.debug(
       'Data for id "%s" fetched in %sms!',
       target_id,
