@@ -1,6 +1,6 @@
-FROM node:17-alpine
+FROM node:18 AS builder
 
-RUN apk add chromium git bash
+RUN apt update && apt install git bash
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
@@ -11,7 +11,7 @@ COPY package.json /app/package.json
 
 COPY yarn.lock /app/yarn.lock
 
-RUN yarn install
+RUN yarn install --ignore-optional
 
 COPY . /app
 
@@ -22,7 +22,19 @@ ENV NODE_ENV=production \
 
 RUN yarn install
 
-VOLUME [ "/app/passport" ]
+FROM node:18-slim AS target
 
-ENTRYPOINT ["yarn", "docker.entrypoint.stealer"]
-CMD []
+ENV NODE_ENV=production \
+    TZ=Europe/Warsaw
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules /app/node_modules
+
+COPY --from=builder /app/package.json .
+
+COPY --from=builder /app/yarn.lock .
+
+COPY --from=builder /app/dist /app/dist
+
+CMD ["yarn", "docker.entrypoint.stealer"]
