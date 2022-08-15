@@ -34,7 +34,7 @@ void yargs(hideBin(process.argv))
     (yargs) => yargs,
     async ({ gateway }) => {
       const manager = new BridgeManager(cliLogger, { gateway })
-      manager.start()
+      await manager.start()
     }
   )
   .command(
@@ -58,7 +58,7 @@ void yargs(hideBin(process.argv))
         { gateway },
         { chunkSize, delayPerChunk }
       )
-      manager.start()
+      await manager.start()
     }
   )
   .command(
