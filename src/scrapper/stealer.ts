@@ -157,7 +157,7 @@ export class StealerScrapper extends ScrapperBase<string> {
     return detailsResponse
   }
 
-  async prepare() {
+  protected async prepare() {
     this.timestamps.sourceScrap = DateTime.now()
     const initialResponse = await this.client.get(
       'https://planzajec.pjwstk.edu.pl/PlanOgolny3.aspx'
