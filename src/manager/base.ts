@@ -43,7 +43,7 @@ export abstract class ManagerBase {
   constructor(protected readonly logger: Logger, configuration: ManagerConfig) {
     const wsLink = new GraphQLWsLink(
       createClient({
-        url: 'ws://localhost:3000/graphql',
+        url: configuration.gateway,
         webSocketImpl: WebSocket,
       })
     )

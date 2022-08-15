@@ -23,8 +23,8 @@ const cliLogger =
 void yargs(hideBin(process.argv))
   .option('gateway', {
     description:
-      'URL for API websocket gateway, can be set by env ALTAPI_GATEWAY.',
-    default: process.env.ALTAPI_GATEWAY ?? 'ws://localhost:4010',
+      'URL for API websocket gateway, can be set by env PUPPY_GATEWAY.',
+    default: process.env.PUPPY_GATEWAY ?? 'ws://localhost:3000/graphql',
   })
   .command(
     'bridge',

@@ -5,3 +5,5 @@ node_modules/
 Dockerfile
 docker-compose.yml
 passport/
+/src/_autogen
+/dump

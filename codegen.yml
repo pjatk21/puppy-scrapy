@@ -1,4 +1,4 @@
-schema: http://localhost:3000/graphql
+schema: ./schema.graphql
 documents: ./src/**/*.ts
 generates:
   ./src/_autogen/graphql.ts:
