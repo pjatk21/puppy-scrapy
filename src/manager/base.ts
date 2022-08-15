@@ -145,7 +145,7 @@ export abstract class ManagerBase {
       )
 
       // Wait and mark it as ready
-      this.isReady.then(() => this.updateState(HSState.READY))
+      void this.isReady.then(() => this.updateState(HSState.READY))
     })
   }
 
@@ -153,7 +153,7 @@ export abstract class ManagerBase {
    * Set upload event (executed after each schedule entry scrapped).
    */
   protected initTransportEvent() {
-    this.scrapper?.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
+    void this.scrapper?.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
       this.transporter(htmlId, context)
     )
   }

@@ -28,7 +28,7 @@ export abstract class ScrapperPuppeteer<T> extends ScrapperBase<T> {
   }
 
   protected async begin() {
-    super.begin()
+    await super.begin()
     this.activePage = await this.browser.newPage()
   }
 

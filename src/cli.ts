@@ -21,7 +21,7 @@ const cliLogger =
         level: process.env.PINO_LEVEL ?? 'debug',
       })
 
-yargs(hideBin(process.argv))
+void yargs(hideBin(process.argv))
   .option('gateway', {
     description:
       'URL for API websocket gateway, can be set by env ALTAPI_GATEWAY.',
