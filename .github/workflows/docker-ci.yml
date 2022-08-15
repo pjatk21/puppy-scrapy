@@ -6,7 +6,6 @@ on:
       - "v*"
     branches:
       - "main"
-      - "sigma-*"
 
 jobs:
   build:
@@ -29,7 +28,7 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/pjatk21/alt-scrap:latest
-            ghcr.io/pjatk21/alt-scrap:${{github.ref_name}}
+            ghcr.io/pjatk21/puppy-scrapy:latest
+            ghcr.io/pjatk21/puppy-scrapy:${{github.ref_name}}
           cache-from: type=gha
           cache-to: type=gha,mode=max
