@@ -2,6 +2,9 @@ import { Logger } from 'pino'
 import type { ScheduleEntry } from './types'
 import got, { Got } from 'got'
 
+/**
+ * @deprecated HTTP upload is no longer supported. Use the bridge instead.
+ */
 export class Uploader {
   private readonly base: URL
   private readonly got: Got
