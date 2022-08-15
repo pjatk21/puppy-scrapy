@@ -1,7 +1,23 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
-import { io } from 'socket.io-client'
+import {
+  ApolloClient,
+  ApolloError,
+  InMemoryCache,
+  NormalizedCacheObject,
+} from '@apollo/client/core'
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
+import { createClient } from 'graphql-ws'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../scrapper/base'
+import {
+  DispositionsSubscription,
+  DispositionsSubscriptionVariables,
+  ProcessFragmentMutation,
+  ProcessFragmentMutationVariables,
+  ScrapTask,
+} from '@auto/graphql'
+import { processFragmentMutation, tasksSubscription } from './queries'
+import WebSocket from 'ws'
 
 export type ManagerConfig = {
   gateway: string
@@ -17,10 +33,7 @@ export abstract class ManagerBase {
    */
   protected scrapper?: ScrapperBase
 
-  /**
-   * Socket used for communication with gateway.
-   */
-  readonly socket: ReturnType<typeof io>
+  readonly client: ApolloClient<NormalizedCacheObject>
 
   /**
    * Used for indicate if task is running.
@@ -28,10 +41,16 @@ export abstract class ManagerBase {
   protected pendingPromise: Promise<unknown> | null = null
 
   constructor(protected readonly logger: Logger, configuration: ManagerConfig) {
-    // setup socket
-    this.socket = io(configuration.gateway, {
-      autoConnect: false,
-      transports: ['websocket', 'polling'],
+    const wsLink = new GraphQLWsLink(
+      createClient({
+        url: 'ws://localhost:3000/graphql',
+        webSocketImpl: WebSocket,
+      })
+    )
+
+    this.client = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: wsLink,
     })
   }
 
@@ -45,7 +64,7 @@ export abstract class ManagerBase {
    * @param htmlId id property from html, used as task identifier
    * @param context payload which will be sent to the server
    */
-  protected transporter(
+  protected async transporter(
     htmlId: string,
     context: { body?: string; error?: Error }
   ) {
@@ -54,61 +73,44 @@ export abstract class ManagerBase {
       this.logger.error(error)
     }
     // this.logger.info({htmlId, body})
-    if (body) this.socket.emit(HypervisorEvents.SCHEDULE, { htmlId, body })
+    if (!body) return
+    await this.client
+      .mutate<ProcessFragmentMutation, ProcessFragmentMutationVariables>({
+        mutation: processFragmentMutation,
+        variables: {
+          html: body,
+        },
+      })
+      .catch((e) => {
+        if (!(e instanceof ApolloError)) this.logger.error(e)
+      })
+    //if (body) this.socket.emit(HypervisorEvents.SCHEDULE, { htmlId, body })
   }
 
   /**
    * Reports state to the hypervisor.
    * @param state
    */
-  protected updateState(state: HSState) {
-    this.socket.emit(HypervisorEvents.STATE, state)
-    this.logger.info('Updated state to %s', state)
-  }
-
-  /**
-   * Command dispatcher.
-   * @param ev command issued by hypervisor
-   */
-  protected handleCommand(ev: HypervisorScrapperCommands, arg: unknown) {
-    this.logger.info({ ev, arg })
-    this.updateState(HSState.WORKING)
-
-    if (this.pendingPromise !== null) {
-      this.logger.warn("Can't run command, promise pending!")
-      return
-    }
-
-    switch (ev) {
-      case HypervisorScrapperCommands.SCRAP:
-        this.pendingPromise = this.manageScrap(arg as HypervisorScrapArgs)
-          .then(() => (this.pendingPromise = null))
-          .then(() => this.updateState(HSState.READY))
-        break
-      case HypervisorScrapperCommands.DISCONNECT:
-        this.socket.disconnect()
-        break
-    }
+  protected updateState(state: string) {
+    // console.log(state)
   }
 
   /**
    * Main method for managing scrap process.
-   * @param scrapArgs arguments received from the server
+   * @param task arguments received from the server
    */
-  protected async manageScrap(scrapArgs: HypervisorScrapArgs) {
+  protected async manageScrap(task: ScrapTask) {
     if (!this.scrapper) throw new Error("Scrapper hasn't been initalized!")
-    const scrapUntil = DateTime.fromISO(scrapArgs.scrapUntil).setZone()
+    const scrapUntil = DateTime.fromISO(task.until).setZone()
 
-    this.logger.info('Scrapping until %s...', scrapArgs.scrapUntil)
-    let activeDate = scrapArgs.scrapStart
-      ? DateTime.fromISO(scrapArgs.scrapStart)
-      : DateTime.now()
+    this.logger.info('Scrapping until %s...', task.until)
+    let activeDate = task.since ? DateTime.fromISO(task.since) : DateTime.now()
 
     while (activeDate < scrapUntil) {
       this.scrapper.overwriteConfig({
         setDate: activeDate,
-        limit: scrapArgs.limit,
-        skip: scrapArgs.skip,
+        // limit: task.limit,
+        // skip: task.skip,
       })
       await this.scrapper.getData()
 
@@ -117,44 +119,19 @@ export abstract class ManagerBase {
   }
 
   /**
-   * This method registers scrapper in the hypervisor.
-   */
-  protected register() {
-    this.logger.info(
-      'Connected to gateway! ID: "%s", transport: %s',
-      this.socket.id,
-      this.socket.io.engine.transport.name
-    )
-
-    this.socket.emit(HypervisorEvents.PASSPORT, new Keychain().read())
-
-    this.socket.once(HypervisorEvents.VISA, () => {
-      this.logger.info('Visa received!')
-
-      // Setup events
-      this.initTransportEvent()
-      this.socket.on(HypervisorEvents.COMMAND, (ev, arg) =>
-        this.handleCommand(ev, arg)
-      )
-
-      // Wait and mark it as ready
-      void this.isReady.then(() => this.updateState(HSState.READY))
-    })
-  }
-
-  /**
    * Set upload event (executed after each schedule entry scrapped).
    */
   protected initTransportEvent() {
-    void this.scrapper?.on(ScrapperEvent.FETCH, (htmlId: string, context: any) =>
-      this.transporter(htmlId, context)
+    void this.scrapper?.on(
+      ScrapperEvent.FETCH,
+      (htmlId: string, context: any) => void this.transporter(htmlId, context)
     )
   }
 
   /**
    * Entrypoint of the scrapper.
    */
-  start() {
+  async start() {
     this.logger.info('Starting manager...')
     this.logger.debug({
       msg: 'Runtime',
@@ -162,13 +139,26 @@ export abstract class ManagerBase {
       node: process.version,
       version: process.env.npm_package_version,
     })
-    this.socket.connect()
-    this.socket.once('connect', () => this.register())
+
+    this.initTransportEvent()
+    this.client
+      .subscribe<DispositionsSubscription, DispositionsSubscriptionVariables>({
+        query: tasksSubscription,
+        variables: {
+          tasksDispositionsScraperId: 'jeabc smuka scrapper',
+        },
+      })
+      .subscribe(({ data }) => {
+        if (!data) return
+        if (!data.tasksDispositions) return
+        void this.manageScrap(data.tasksDispositions)
+      })
+    this.logger.info('Manager started and is ready!')
 
     // code related to the gentle connection drop
-    this.socket.once('disconnect', (reason) => {
-      this.logger.warn('Disconnected from hypervisor (%s)!', reason.toString())
-      process.exit()
-    })
+    //this.socket.once('disconnect', (reason) => {
+    //  this.logger.warn('Disconnected from hypervisor (%s)!', reason.toString())
+    //  process.exit()
+    //})
   }
 }

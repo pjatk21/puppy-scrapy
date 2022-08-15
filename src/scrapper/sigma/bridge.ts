@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
 import { WebSocketServer, WebSocket } from 'ws'
-import { HypervisorScrapArgs } from '../../altapi/hypervisor-types'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../base'
 
 enum BridgeEvents {
@@ -91,7 +90,7 @@ export class SigmaBridge extends ScrapperBase<string> {
     this.connectedSigma.send(
       JSON.stringify({
         scrapUntil: this.options.setDate?.toISO() ?? DateTime.now().toISO(),
-      } as HypervisorScrapArgs)
+      })
     )
 
     await new Promise<void>((resolve) =>
