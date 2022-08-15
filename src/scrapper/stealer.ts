@@ -120,11 +120,7 @@ export class StealerScrapper extends ScrapperBase<string> {
           DataPicker: target_date,
           DataPicker$dateInput: target_date,
           DataPicker_ClientState: '',
-          DataPicker_dateInput_ClientState:
-            '{"enabled":true,"emptyMessage":"","validationText":"{{DATE}}-00-00-00","valueAsString":"{{DATE}}-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"{{DATE}}"}'.replaceAll(
-              '{{DATE}}',
-              target_date
-            ),
+          DataPicker_dateInput_ClientState: `{"enabled":true,"emptyMessage":"","validationText":"${target_date}-00-00-00","valueAsString":"${target_date}-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"${target_date}"}`,
           __ASYNCPOST: 'true',
           RadAJAXControlID: 'RadAjaxPanel1',
         },
