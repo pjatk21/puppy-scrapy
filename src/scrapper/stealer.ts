@@ -50,7 +50,7 @@ export class StealerScrapper extends ScrapperBase<string> {
     headers: {
       'X-MicrosoftAjax': 'Delta=true',
       'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     },
   })
@@ -250,8 +250,9 @@ export class StealerScrapper extends ScrapperBase<string> {
           .shiftTo('seconds', 'milliseconds')
           .toHuman(),
         requestRate:
-          (responsesCount / now.diff(targetScrap).as('seconds')).toFixed(3) +
-          'r/s',
+          (
+            responsesCount / now.diff(targetScrap).as('seconds')
+          ).toLocaleString() + 'r/s',
         scrapSize: responsesCount,
       },
       'Timings for scrap of date %s',
