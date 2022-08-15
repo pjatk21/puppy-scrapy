@@ -9,6 +9,9 @@ import { WorkerManager } from './manager/worker'
 import { Keychain } from './keychain'
 import { BridgeManager } from './manager/bridge'
 import { StealerManager } from './manager/stealer'
+import { StealerScrapper } from './scrapper/stealer'
+import { DateTime } from 'luxon'
+import fs from 'fs/promises'
 
 const cliLogger =
   process.env.NODE_ENV === 'production'
@@ -98,6 +101,54 @@ void yargs(hideBin(process.argv))
         { chunkSize, delayPerChunk }
       )
       manager.start()
+    }
+  )
+  .command(
+    'dump',
+    'Save all data into html files. Use only for debug purposes.',
+    (yargs) => yargs,
+    async () => {
+      let counter = 0
+      let startDate = DateTime.local(2022, 9, 5)
+      const scraper = new StealerScrapper(
+        {
+          setDate: startDate,
+        },
+        cliLogger,
+        {
+          chunkSize: 12,
+          delayPerChunk: 600,
+        }
+      )
+
+      const minify = (html: string) => {
+        return html.trim().replaceAll('\n', '').replaceAll('"', '\\"')
+      }
+
+      const saveToDisk = async (content: string) => {
+        const date = startDate.toISODate()
+        counter += 1
+
+        // create directory if not exists
+        await fs.mkdir(`./dump/${date}/${counter}`, { recursive: true })
+        // save as html file
+        await fs.writeFile(`dump/${date}/${counter}/dump.html`, content)
+
+        // save as minified html file
+        await fs.writeFile(
+          `dump/${date}/${counter}/dump.min.html`,
+          minify(content)
+        )
+      }
+
+      for (let i = 0; i < 60; i++) {
+        const data = await scraper.getData()
+        for (const d of data) await saveToDisk(d)
+        startDate = startDate.plus({ days: 1 })
+        scraper.overwriteConfig({ setDate: startDate })
+        cliLogger.info(`Dumped ${data.length} records`)
+        counter = 0
+      }
     }
   )
   .showHelpOnFail(true)
