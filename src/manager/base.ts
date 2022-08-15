@@ -1,14 +1,7 @@
 import { DateTime } from 'luxon'
 import { Logger } from 'pino'
 import { io } from 'socket.io-client'
-import {
-  HypervisorEvents,
-  HypervisorScrapperCommands,
-  HypervisorScrapperState as HSState,
-} from '../altapi/hypevisor-enums'
-import { Keychain } from '../keychain'
 import { ScrapperBase, ScrapperEvent, ScrapperOptions } from '../scrapper/base'
-import { HypervisorScrapArgs } from '../altapi/hypervisor-types'
 
 export type ManagerConfig = {
   gateway: string
