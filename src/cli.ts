@@ -26,15 +26,10 @@ void yargs(hideBin(process.argv))
       'URL for API websocket gateway, can be set by env PUPPY_GATEWAY.',
     default: process.env.PUPPY_GATEWAY ?? 'ws://localhost:3000/graphql',
   })
-  .command(
-    'bridge',
-    'Run sigma scrapper with alt scrap translation layer',
-    (yargs) => yargs,
-    async ({ gateway }) => {
-      const manager = new BridgeManager(cliLogger, { gateway })
-      await manager.start()
-    }
-  )
+  .option('token', {
+    type: 'string',
+    default: process.env.SCRAPER_TOKEN,
+  })
   .command(
     'stealer',
     'Use HTTP forgery to get data much faster (experimental). Try not to go faster than 20 requests per second for longer periods. (maxQueryRate (r/s) = (chunkSize/delayPerChunk) * 1000ms)',
@@ -50,10 +45,12 @@ void yargs(hideBin(process.argv))
           default: 4,
           type: 'number',
         }),
-    async ({ gateway, delayPerChunk, chunkSize }) => {
+    async ({ gateway, delayPerChunk, chunkSize, token }) => {
+      if (!token) throw new Error('Token is required!')
+
       const manager = new StealerManager(
         cliLogger,
-        { gateway },
+        { gateway, token },
         { chunkSize, delayPerChunk }
       )
       await manager.start()

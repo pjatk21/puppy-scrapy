@@ -9,7 +9,7 @@ export class BridgeManager extends ManagerBase {
   constructor(logger: Logger, configuration: ManagerConfig) {
     super(logger, configuration)
 
-    this.scrapper = new SigmaBridge(configuration.scrapperOptions, logger)
+    this.scrapper = new SigmaBridge(configuration.scraperOptions, logger)
     this.isReady = (this.scrapper as SigmaBridge).isScrapperConnected // ready if scrapper is connected
   }
 }

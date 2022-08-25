@@ -3,5 +3,6 @@ declare namespace NodeJS {
     PUPPY_GATEWAY?: string
     PINO_LEVEL?: string
     NODE_ENV?: 'production' | 'development'
+    SCRAPER_TOKEN?: string
   }
 }

@@ -11,7 +11,7 @@ export class StealerManager extends ManagerBase {
     super(logger, configuration)
 
     this.scrapper = new StealerScrapper(
-      configuration.scrapperOptions,
+      configuration.scraperOptions,
       logger,
       delays
     )

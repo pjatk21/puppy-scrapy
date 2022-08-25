@@ -21,7 +21,8 @@ import WebSocket from 'ws'
 
 export type ManagerConfig = {
   gateway: string
-  scrapperOptions?: ScrapperOptions
+  token: string
+  scraperOptions?: ScrapperOptions
 }
 
 /**
@@ -45,6 +46,9 @@ export abstract class ManagerBase {
       createClient({
         url: configuration.gateway,
         webSocketImpl: WebSocket,
+        connectionParams: {
+          scrapperToken: configuration.token,
+        },
       })
     )
 
@@ -144,9 +148,6 @@ export abstract class ManagerBase {
     this.client
       .subscribe<DispositionsSubscription, DispositionsSubscriptionVariables>({
         query: tasksSubscription,
-        variables: {
-          tasksDispositionsScraperId: 'jeabc smuka scrapper',
-        },
       })
       .subscribe(({ data }) => {
         if (!data) return
@@ -154,11 +155,5 @@ export abstract class ManagerBase {
         void this.manageScrap(data.tasksDispositions)
       })
     this.logger.info('Manager started and is ready!')
-
-    // code related to the gentle connection drop
-    //this.socket.once('disconnect', (reason) => {
-    //  this.logger.warn('Disconnected from hypervisor (%s)!', reason.toString())
-    //  process.exit()
-    //})
   }
 }

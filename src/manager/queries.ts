@@ -12,8 +12,8 @@ export const processFragmentMutation = gql`
 `
 
 export const tasksSubscription = gql`
-  subscription Dispositions($tasksDispositionsScraperId: ID!) {
-    tasksDispositions(scraperId: $tasksDispositionsScraperId) {
+  subscription Dispositions {
+    tasksDispositions {
       id
       name
       state
