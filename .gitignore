@@ -134,4 +134,3 @@ upload*.json
 passport/
 .DS_Store
 /dump
-/src/_autogen
