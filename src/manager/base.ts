@@ -47,7 +47,7 @@ export abstract class ManagerBase {
         url: configuration.gateway,
         webSocketImpl: WebSocket,
         connectionParams: {
-          scrapperToken: configuration.token,
+          Authorization: `Scraper ${configuration.token}`,
         },
       })
     )
