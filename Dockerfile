@@ -15,8 +15,6 @@ RUN yarn install --ignore-optional
 
 COPY . /app
 
-RUN yarn graphql-codegen
-
 RUN yarn build
 
 ENV NODE_ENV=production \
