@@ -22,3 +22,9 @@ export const tasksSubscription = gql`
     }
   }
 `
+
+export const bindChannel = gql`
+  mutation BindChannel($token: String!) {
+    bindChannel(scraperToken: $token)
+  }
+`

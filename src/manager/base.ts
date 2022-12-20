@@ -3,8 +3,10 @@ import { Logger } from 'pino'
 import {
   ApolloClient,
   ApolloError,
+  HttpLink,
   InMemoryCache,
   NormalizedCacheObject,
+  split,
 } from '@apollo/client/core'
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
 import { createClient } from 'graphql-ws'
@@ -16,8 +18,14 @@ import {
   ProcessFragmentMutationVariables,
   ScrapTask,
 } from '@auto/graphql'
-import { processFragmentMutation, tasksSubscription } from './queries'
+import {
+  bindChannel,
+  processFragmentMutation,
+  tasksSubscription,
+} from './queries'
 import WebSocket from 'ws'
+import { getMainDefinition } from '@apollo/client/utilities'
+import { Kind } from 'graphql'
 
 export type ManagerConfig = {
   gateway: string
@@ -42,19 +50,33 @@ export abstract class ManagerBase {
   protected pendingPromise: Promise<unknown> | null = null
 
   constructor(protected readonly logger: Logger, configuration: ManagerConfig) {
+    const httpLink = new HttpLink({
+      uri: 'http://localhost:4000/graphql',
+      headers: {
+        authorization: `Scraper ${configuration.token}`,
+      },
+    })
     const wsLink = new GraphQLWsLink(
       createClient({
         url: configuration.gateway,
         webSocketImpl: WebSocket,
-        connectionParams: {
-          Authorization: `Scraper ${configuration.token}`,
-        },
       })
+    )
+
+    const splitterLink = split(
+      (op) => {
+        const definition = getMainDefinition(op.query)
+        if (definition.kind !== Kind.OPERATION_DEFINITION) return false
+        if (definition.operation !== 'subscription') return false
+        return true
+      },
+      wsLink,
+      httpLink
     )
 
     this.client = new ApolloClient({
       cache: new InMemoryCache(),
-      link: wsLink,
+      link: splitterLink,
     })
   }
 

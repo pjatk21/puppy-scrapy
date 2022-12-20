@@ -13,6 +13,11 @@ export type Scalars = {
   DateTime: any;
 };
 
+export type App = {
+  __typename?: 'App';
+  version: Scalars['String'];
+};
+
 export enum EventType {
   Exam = 'exam',
   Lecture = 'lecture',
@@ -23,11 +28,20 @@ export enum EventType {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  bindChannel: Scalars['Boolean'];
   createPuppy?: Maybe<Puppy>;
+  createScraper: ScraperToken;
+  oauth2: OAuth2;
   processFragment: ScheduledEvent;
+  setGroups: Array<Scalars['String']>;
   triggerTask: Scalars['String'];
   updateOwnState: Scalars['String'];
   updateTaskState: Scalars['String'];
+};
+
+
+export type MutationBindChannelArgs = {
+  scraperToken: Scalars['String'];
 };
 
 
@@ -37,8 +51,18 @@ export type MutationCreatePuppyArgs = {
 };
 
 
+export type MutationCreateScraperArgs = {
+  alias?: InputMaybe<Scalars['String']>;
+};
+
+
 export type MutationProcessFragmentArgs = {
   html: Scalars['String'];
+};
+
+
+export type MutationSetGroupsArgs = {
+  groups: Array<Scalars['String']>;
 };
 
 
@@ -58,6 +82,16 @@ export type MutationUpdateTaskStateArgs = {
   taskId: Scalars['ID'];
 };
 
+export type OAuth2 = {
+  __typename?: 'OAuth2';
+  google: Session;
+};
+
+
+export type OAuth2GoogleArgs = {
+  code: Scalars['String'];
+};
+
 export type Puppy = {
   __typename?: 'Puppy';
   age: Scalars['Int'];
@@ -69,8 +103,10 @@ export type Query = {
   __typename?: 'Query';
   allEvents: Array<ScheduledEvent>;
   allPuppies: Array<Puppy>;
+  app: App;
   availableGroups: Array<Scalars['String']>;
   availableHosts: Array<Scalars['String']>;
+  me: User;
   puppies: Array<Puppy>;
   puppy?: Maybe<Puppy>;
   rangeEvents: Array<ScheduledEvent>;
@@ -102,6 +138,12 @@ export type QueryRangeEventsArgs = {
   type?: InputMaybe<EventType>;
 };
 
+export type ScheduledDay = {
+  __typename?: 'ScheduledDay';
+  date: Scalars['String'];
+  events: Array<ScheduledEvent>;
+};
+
 export type ScheduledEvent = {
   __typename?: 'ScheduledEvent';
   begin: Scalars['DateTime'];
@@ -128,6 +170,24 @@ export type ScrapTask = {
   until: Scalars['DateTime'];
 };
 
+export type Scraper = {
+  __typename?: 'Scraper';
+  alias?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+};
+
+export type ScraperToken = {
+  __typename?: 'ScraperToken';
+  token: Scalars['String'];
+};
+
+export type Session = {
+  __typename?: 'Session';
+  expiresAfter: Scalars['DateTime'];
+  token: Scalars['String'];
+  userId: Scalars['String'];
+};
+
 export type Subscription = {
   __typename?: 'Subscription';
   tasksDispositions?: Maybe<ScrapTask>;
@@ -136,13 +196,21 @@ export type Subscription = {
 export enum TaskState {
   /** Task execution finished. */
   Done = 'DONE',
-  /** All available scrappers rejected task execution. */
+  /** All available scrapers rejected task execution. */
   Rejected = 'REJECTED',
-  /** Task is being executed by a scrapper. */
+  /** Task is being executed by a scraper. */
   Running = 'RUNNING',
-  /** Task is looking for a scrapper that can execute it. */
+  /** Task is looking for a scraper that can execute it. */
   Waiting = 'WAITING'
 }
+
+export type User = {
+  __typename?: 'User';
+  email: Scalars['String'];
+  groups: Array<Scalars['String']>;
+  name: Scalars['String'];
+  scrapers: Array<Scraper>;
+};
 
 export type ProcessFragmentMutationVariables = Exact<{
   html: Scalars['String'];
@@ -155,3 +223,10 @@ export type DispositionsSubscriptionVariables = Exact<{ [key: string]: never; }>
 
 
 export type DispositionsSubscription = { __typename?: 'Subscription', tasksDispositions?: { __typename?: 'ScrapTask', id: string, name: string, state: TaskState, until: any, since: any } | null };
+
+export type BindChannelMutationVariables = Exact<{
+  token: Scalars['String'];
+}>;
+
+
+export type BindChannelMutation = { __typename?: 'Mutation', bindChannel: boolean };
